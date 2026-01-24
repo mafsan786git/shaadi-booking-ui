@@ -22,15 +22,34 @@ api.interceptors.request.use(
     }
 );
 
-// Response Interceptor: Handle Token Refresh (Optional/Advanced) or Errors
+// Response Interceptor: Handle Token Refresh
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
+        const originalRequest = error.config;
+
         // Handle 401 Unauthorized
-        if (error.response && error.response.status === 401) {
-            // Clear token and redirect to login if necessary
-            // localStorage.removeItem('accessToken');
-            // window.location.href = '/login';
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true;
+            try {
+                const refreshToken = localStorage.getItem('refreshToken');
+                if (refreshToken) {
+                    const { data } = await api.post('/auth/refresh', { refreshToken });
+
+                    localStorage.setItem('accessToken', data.accessToken);
+                    localStorage.setItem('refreshToken', data.refreshToken);
+
+                    api.defaults.headers.common['Authorization'] = `Bearer ${data.accessToken}`;
+                    originalRequest.headers['Authorization'] = `Bearer ${data.accessToken}`;
+
+                    return api(originalRequest);
+                }
+            } catch (refreshError) {
+                console.error("Token refresh failed", refreshError);
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                window.location.href = '/auth';
+            }
         }
         return Promise.reject(error);
     }

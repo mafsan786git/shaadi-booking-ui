@@ -2,7 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 
-export const PublicLayout = () => {
+export const MainLayout = () => {
   return (
     <div className="layout-wrapper">
       <Navbar />
