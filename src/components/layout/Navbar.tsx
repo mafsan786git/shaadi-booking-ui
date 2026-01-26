@@ -120,18 +120,21 @@ export const Navbar = () => {
 
           {/* Login / Profile */}
           {isLoading ? null : isAuthenticated ? (
-            <div className="nav-item profile-action" style={{ position: 'relative' }} title="Profile Menu">
-              <div
-                style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
-                onClick={() => setIsProfileOpen(!isProfileOpen)}
-              >
-                <User size={20} />
-                <span className="nav-label" style={{ marginLeft: '0.5rem' }}>{user?.name?.split(' ')[0]}</span>
-              </div>
+            <div
+              className="nav-item profile-action"
+              style={{ position: 'relative', cursor: 'pointer' }}
+              title="Profile Menu"
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
+            >
+              <User size={20} />
+              <span className="nav-label">{user?.name?.split(' ')[0]}</span>
 
               {/* Profile Dropdown */}
               {isProfileOpen && (
-                <div className="profile-dropdown">
+                <div
+                  className="profile-dropdown"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <div className="dropdown-item" onClick={() => {
                     setIsProfileOpen(false);
                     navigate('/profile');
