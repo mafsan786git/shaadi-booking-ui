@@ -8,7 +8,7 @@ export const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { user, isAuthenticated, logout, isLoading } = useAuthStore();
+  const { user, isAuthenticated, logout, isLoading, refreshProfile } = useAuthStore();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -39,20 +39,15 @@ export const Navbar = () => {
   }, []);
 
   const handleNavigation = (path: string) => {
-    if (location.pathname === path) {
-      window.location.reload();
-    } else {
+    if (location.pathname !== path) {
       navigate(path);
     }
   };
 
   const handleLogoClick = () => {
     if (urlZipcode) {
-      // "show the hall based on zipcode" -> Refresh / Re-navigate
-      // If already on halls with same zip, force reload?
-      if (location.pathname === '/halls' && searchParams.get('zipcode') === urlZipcode) {
-        window.location.reload();
-      } else {
+      // "show the hall based on zipcode" -> Navigate, React handles the rest
+      if (location.pathname !== '/halls' || searchParams.get('zipcode') !== urlZipcode) {
         navigate(`/halls?zipcode=${urlZipcode}`);
       }
     } else {
@@ -92,9 +87,9 @@ export const Navbar = () => {
         {/* LEFT SECTION: Logo + Location */}
         <div className="nav-left">
           <div className="brand" onClick={handleLogoClick}>
-            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1' }}>
-              <span style={{ fontSize: '1.2rem' }}>Shaadi</span>
-              <span className="brand-accent" style={{ fontSize: '1rem' }}>Booking</span>
+            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '0.9', gap: '2px' }}>
+              <span style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.5px' }}>Shaadi</span>
+              <span className="brand-accent" style={{ fontSize: '1.1rem', fontWeight: 700 }}>Booking</span>
             </div>
           </div>
 
@@ -129,7 +124,8 @@ export const Navbar = () => {
           {/* Dashboard */}
           {isAuthenticated && (
             <div className="nav-item" title="Dashboard" onClick={() => {
-              handleNavigation('/dashboard');
+              // Always navigate with a new timestamp to trigger re-fetch
+              navigate(`/dashboard?refresh=${Date.now()}`);
             }}>
               <LayoutDashboard size={18} />
               {/* User requested name "Dashboard" specifically? user said "Dashboard (based on role...)" */}
@@ -152,7 +148,12 @@ export const Navbar = () => {
               className="nav-item profile-action"
               style={{ position: 'relative', cursor: 'pointer' }}
               title="Profile Menu"
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              onClick={() => {
+                if (!isProfileOpen) {
+                  refreshProfile();
+                }
+                setIsProfileOpen(!isProfileOpen);
+              }}
             >
               <User size={20} />
               <span className="nav-label">{user?.name?.split(' ')[0]}</span>

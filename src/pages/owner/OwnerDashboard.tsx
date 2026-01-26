@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { hallService } from '../../services/hallService';
 import type { Hall } from '../../types';
 import { toast } from 'react-hot-toast';
-import { Plus, Trash, MapPin, Users } from 'lucide-react';
+import { Plus, Trash, MapPin, Users, ListOrdered, Filter } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { CreateHallModal } from '../../components/owner/CreateHallModal';
 
@@ -11,10 +12,11 @@ export const OwnerDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [hallToEdit, setHallToEdit] = useState<Hall | null>(null);
+    const [searchParams] = useSearchParams();
 
     useEffect(() => {
         fetchHalls();
-    }, []);
+    }, [searchParams.get('refresh')]);
 
     const fetchHalls = async () => {
         try {
@@ -60,12 +62,17 @@ export const OwnerDashboard = () => {
     const activeHalls = halls.filter(h => h.status !== 'DELETED');
 
     return (
-        <div className="container" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
-            <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <h2>My Halls</h2>
-                <Button variant="primary" onClick={handleCreateNew}>
-                    <Plus size={18} style={{ marginRight: '0.5rem' }} />New Hall
+        <div className="container" style={{ paddingTop: '0.25rem', paddingBottom: '0.5rem' }}>
+            <div className="dashboard-header">
+                <Button variant="outline" onClick={() => { }} style={{ padding: '0.25rem 0.5rem', height: 'auto', border: '1px solid #e2e8f0' }}>
+                    <ListOrdered size={16} style={{ marginRight: '0.4rem' }} />Filter
                 </Button>
+
+                <div className="header-action-right">
+                    <Button variant="primary" onClick={handleCreateNew} style={{ whiteSpace: 'nowrap', padding: '0.25rem 0.75rem' }}>
+                        <Plus size={18} style={{ marginRight: '0.25rem', flexShrink: 0 }} />Add
+                    </Button>
+                </div>
             </div>
 
             <CreateHallModal
@@ -142,6 +149,15 @@ export const OwnerDashboard = () => {
             )}
 
             <style>{`
+                .dashboard-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 0.5rem;
+                    padding-bottom: 0.25rem;
+                    min-height: 40px;
+                }
+                /* Removed unnecessary classes */
                 .hall-grid {
                     display: grid;
                     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -238,7 +254,7 @@ export const OwnerDashboard = () => {
                 .card-bottom-row {
                     display: flex;
                     justify-content: space-between;
-                    padding: 1rem 1.5rem;
+                    padding: 1rem;
                     background: #f9fafb;
                     border-top: 1px solid #f3f4f6;
                     gap: 1rem;
