@@ -58,3 +58,17 @@ export interface Hall {
     media?: HallMedia[];
     status: 'ACTIVE' | 'INACTIVE' | 'DELETED';
 }
+
+export type HallStatus = 'ACTIVE' | 'INACTIVE' | 'DELETED';
+
+export interface HallRequest {
+    name: string;
+    address: Address;
+    lat: string;
+    lng: string;
+    capacity: number;
+    basePrice: number;
+    facilities: string[];
+    description: string;
+    contacts: string[];
+}

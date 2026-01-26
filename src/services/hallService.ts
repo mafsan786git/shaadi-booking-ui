@@ -17,5 +17,10 @@ export const hallService = {
     getOwnerHalls: async (): Promise<Hall[]> => {
         const response = await api.get('/hall/all');
         return response.data;
+    },
+
+    createHall: async (data: any): Promise<Hall> => {
+        const response = await api.post('/hall/create', data);
+        return response.data;
     }
 };
