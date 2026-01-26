@@ -2,7 +2,7 @@ import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-do
 import { useAuthStore } from '../../context/useAuthStore';
 import { Button } from '../common/Button';
 import { User, LogOut, Search, MapPin, LayoutDashboard, ListOrdered } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 export const Navbar = () => {
   const navigate = useNavigate();
@@ -10,6 +10,7 @@ export const Navbar = () => {
   const [searchParams] = useSearchParams();
   const { user, isAuthenticated, logout, isLoading } = useAuthStore();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   // Derived state for zipcode logic
   const urlZipcode = searchParams.get('zipcode');
@@ -24,13 +25,39 @@ export const Navbar = () => {
     setSearchValue('');
   }, [location.pathname, urlZipcode]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleNavigation = (path: string) => {
+    if (location.pathname === path) {
+      window.location.reload();
+    } else {
+      navigate(path);
+    }
+  };
+
   const handleLogoClick = () => {
     if (urlZipcode) {
       // "show the hall based on zipcode" -> Refresh / Re-navigate
-      navigate(`/halls?zipcode=${urlZipcode}`);
+      // If already on halls with same zip, force reload?
+      if (location.pathname === '/halls' && searchParams.get('zipcode') === urlZipcode) {
+        window.location.reload();
+      } else {
+        navigate(`/halls?zipcode=${urlZipcode}`);
+      }
     } else {
-      if (user?.role === 'ADMIN' || user?.role === 'OWNER') navigate('/dashboard');
-      else navigate('/'); // Customer Fallback to Landing
+      if (user?.role === 'ADMIN' || user?.role === 'OWNER') handleNavigation('/dashboard');
+      else handleNavigation('/'); // Customer Fallback to Landing
     }
   };
 
@@ -102,7 +129,7 @@ export const Navbar = () => {
           {/* Dashboard */}
           {isAuthenticated && (
             <div className="nav-item" title="Dashboard" onClick={() => {
-              navigate('/dashboard');
+              handleNavigation('/dashboard');
             }}>
               <LayoutDashboard size={18} />
               {/* User requested name "Dashboard" specifically? user said "Dashboard (based on role...)" */}
@@ -121,6 +148,7 @@ export const Navbar = () => {
           {/* Login / Profile */}
           {isLoading ? null : isAuthenticated ? (
             <div
+              ref={profileRef}
               className="nav-item profile-action"
               style={{ position: 'relative', cursor: 'pointer' }}
               title="Profile Menu"
@@ -137,7 +165,7 @@ export const Navbar = () => {
                 >
                   <div className="dropdown-item" onClick={() => {
                     setIsProfileOpen(false);
-                    navigate('/profile');
+                    handleNavigation('/profile');
                   }}>
                     <User size={16} /> Profile
                   </div>
