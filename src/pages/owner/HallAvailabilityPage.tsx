@@ -378,3 +378,4 @@ export const HallAvailabilityPage: React.FC = () => {
     </div>
   );
 };
+

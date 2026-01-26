@@ -60,30 +60,41 @@ export const useAuthStore = create<AuthState>((set) => {
                 return;
             }
 
-            // Optimization: If we have a cached user, use it immediately
-            // We TRUST the token is valid if it exists. 
-            // The API calls will fail with 401 if it's invalid, handling the logout then.
-            // Explicit profile refresh happens only on specific actions (like opening profile menu).
-
             const cachedUser = getUserFromStorage();
             if (cachedUser) {
+                // Optimistically authenticated while we validate in background
                 set({ user: cachedUser, isAuthenticated: true, isLoading: false });
+
+                // Silent background validation
+                authService.getProfile().then(user => {
+                    localStorage.setItem('user_cache', JSON.stringify(user));
+                    set({ user, isAuthenticated: true });
+                }).catch(error => {
+                    // If it's a 401, the interceptor will handle refresh or logout.
+                    // We only clear if validation truly fails permanently.
+                    if (error.response?.status !== 401) {
+                        console.error("Auth validation background failed", error);
+                    }
+                });
                 return;
             }
 
-            // Fallback: If no cache but we have token, try to fetch profile
+            // Fallback: If no cache but we have token, try to fetch profile (blocking)
             try {
                 const user = await authService.getProfile();
                 localStorage.setItem('user_cache', JSON.stringify(user));
                 set({ user, isAuthenticated: true, isLoading: false });
             } catch (error) {
-                console.error("Auth check failed", error);
-                localStorage.removeItem('accessToken');
-                localStorage.removeItem('user_cache');
-                set({ user: null, isAuthenticated: false, isLoading: false });
+                // If this fails and interceptor didn't catch/fix it, clear session
+                const is401 = (error as any).response?.status === 401;
+                if (!is401) {
+                    console.error("Auth check failed", error);
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('user_cache');
+                    set({ user: null, isAuthenticated: false, isLoading: false });
+                }
             }
         },
-
         refreshProfile: async () => {
             try {
                 const user = await authService.getProfile();

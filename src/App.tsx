@@ -11,13 +11,16 @@ import { HallAvailabilityPage } from './pages/owner/HallAvailabilityPage';
 
 import { useEffect } from 'react';
 import { useAuthStore } from './context/useAuthStore';
+import { injectLogout } from './services/api';
 
 function App() {
   const checkAuth = useAuthStore((state) => state.checkAuth);
+  const logout = useAuthStore((state) => state.logout);
 
   useEffect(() => {
+    injectLogout(logout);
     checkAuth();
-  }, [checkAuth]);
+  }, [checkAuth, logout]);
 
   return (
     <Router>
