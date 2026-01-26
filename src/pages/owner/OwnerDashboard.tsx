@@ -33,7 +33,7 @@ export const OwnerDashboard = () => {
             <div className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <h2>My Halls</h2>
                 <Button variant="primary" onClick={() => setIsCreateModalOpen(true)}>
-                    <Plus size={18} style={{ marginRight: '0.5rem' }} /> Add New Hall
+                    <Plus size={18} style={{ marginRight: '0.5rem' }} />New Hall
                 </Button>
             </div>
 
