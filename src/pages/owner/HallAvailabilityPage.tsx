@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Calendar as CalendarIcon, RefreshCcw } from 'lucide-react';
 import { AvailabilityCalendar } from '../../components/owner/AvailabilityCalendar';
@@ -10,19 +10,21 @@ import {
   parseISO,
   isSameDay,
   startOfMonth,
-  isSameMonth
+  isSameMonth,
+  addMonths,
+  subMonths
 } from 'date-fns';
-import type { DayAvailabilityResponse, Hall } from '../../types';
+import type { Hall } from '../../types';
 import { toast } from 'react-hot-toast';
 
 export const HallAvailabilityPage: React.FC = () => {
   const navigate = useNavigate();
-  const { halls, selectedHallId } = useHallStore();
+  const { halls, selectedHallId, fetchAvailability: storeFetchAvailability, fetchMultiAvailability: storeFetchMultiAvailability, availabilityCache } = useHallStore();
+  const hasInitiallyFetchedRef = useRef(false);
 
   const [hall, setHall] = useState<Hall | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [availability, setAvailability] = useState<DayAvailabilityResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,11 +42,64 @@ export const HallAvailabilityPage: React.FC = () => {
     }
   }, [selectedHallId, halls, navigate]);
 
+  // Main fetch and pre-fetch effect
   useEffect(() => {
-    if (selectedHallId) {
-      fetchAvailability();
+    if (!selectedHallId) return;
+
+    const loadData = async () => {
+      const monthStr = format(currentMonth, 'yyyy-MM');
+
+      // Check if we already have this in cache
+      const cachedEntry = availabilityCache[selectedHallId]?.[monthStr];
+
+      // Show loading ONLY if it's not in cache OR if we're on a future month change (not initial land)
+      const isInitialLand = !hasInitiallyFetchedRef.current;
+      const shouldShowLoading = !cachedEntry?.data;
+
+      if (shouldShowLoading) setLoading(true);
+
+      try {
+        // Fetch main month
+        // Force refresh on initial land to capture silent updates
+        await storeFetchAvailability(selectedHallId, monthStr, isInitialLand);
+        setLoading(false);
+
+        // Trigger Pre-fetching in background
+        prefetchAdjacentMonths(selectedHallId, currentMonth, isInitialLand);
+
+        hasInitiallyFetchedRef.current = true;
+      } catch (error) {
+        toast.error('Failed to update availability');
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [selectedHallId, currentMonth, storeFetchAvailability]);
+
+  const prefetchAdjacentMonths = (hallId: string, baseDate: Date, force = false) => {
+    // Detect if this is "Initial Load" (Viewing current month as of now)
+    const isNow = isSameMonth(baseDate, new Date());
+
+    let offsets: number[] = [];
+    if (isNow) {
+      // Fetch next 3 months on land
+      offsets = [1, 2, 3];
+    } else {
+      // Fetch prev 2 and next 2 on move
+      offsets = [-2, -1, 1, 2];
     }
-  }, [selectedHallId, currentMonth]);
+
+    const monthsToFetch = offsets.map(offset => {
+      const offsetDate = offset > 0
+        ? addMonths(baseDate, offset)
+        : subMonths(baseDate, Math.abs(offset));
+      return format(offsetDate, 'yyyy-MM');
+    });
+
+    // Batched background fetch (silent)
+    storeFetchMultiAvailability(hallId, monthsToFetch, force).catch(() => { });
+  };
 
   const fetchHallDetails = async () => {
     if (!selectedHallId) return;
@@ -53,20 +108,6 @@ export const HallAvailabilityPage: React.FC = () => {
       setHall(data);
     } catch (error) {
       toast.error('Failed to fetch hall details');
-    }
-  };
-
-  const fetchAvailability = async () => {
-    if (!selectedHallId) return;
-    setLoading(true);
-    try {
-      const monthStr = format(currentMonth, 'yyyy-MM');
-      const data = await hallService.getAvailability(selectedHallId, monthStr);
-      setAvailability(data.nonAvailableDates || []);
-    } catch (error) {
-      toast.error('Failed to fetch availability');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -92,7 +133,10 @@ export const HallAvailabilityPage: React.FC = () => {
 
   if (!hall && !loading) return <div className="container">Hall not found</div>;
 
-  const selectedDayData = availability.find(d => isSameDay(parseISO(d.date), selectedDate));
+  const currentMonthStr = format(currentMonth, 'yyyy-MM');
+  const monthAvailability = (selectedHallId && availabilityCache[selectedHallId]?.[currentMonthStr]?.data) || [];
+
+  const selectedDayData = monthAvailability.find((d: any) => isSameDay(parseISO(d.date), selectedDate));
   const currentStatus = selectedDayData?.status || 'AVAILABLE';
 
   const isShowingCurrentMonth = isSameMonth(currentMonth, new Date());
@@ -132,7 +176,7 @@ export const HallAvailabilityPage: React.FC = () => {
             onMonthChange={handleMonthChange}
             selectedDate={selectedDate}
             onDateSelect={handleDateSelect}
-            availabilityData={availability}
+            availabilityData={monthAvailability}
           />
         </div>
 

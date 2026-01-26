@@ -33,9 +33,13 @@ export const hallService = {
         return response.data;
     },
 
-    getAvailability: async (hallId: string, month: string): Promise<any> => {
+    getAvailability: async (hallId: string, month: string | string[]): Promise<any> => {
         const response = await api.get(`/public/hall/${hallId}/availability`, {
-            params: { month }
+            params: { month },
+            // Ensure array params are formatted as ?month=V1&month=V2
+            paramsSerializer: {
+                indexes: null
+            }
         });
         return response.data;
     }

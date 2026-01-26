@@ -8,11 +8,14 @@ interface HallState {
     isLoading: boolean;
     isInitialLoaded: boolean;
     selectedHallId: string | null;
+    availabilityCache: Record<string, Record<string, { data: any[], timestamp: number }>>; // hallId -> monthStr -> { data, timestamp }
 
     // Actions
     fetchHalls: (force?: boolean) => Promise<void>;
     updateHallStatus: (hallId: string, status: Hall['status']) => Promise<void>;
     setSelectedHallId: (id: string | null) => void;
+    fetchAvailability: (hallId: string, month: string, force?: boolean) => Promise<any[]>;
+    fetchMultiAvailability: (hallId: string, months: string[], force?: boolean) => Promise<void>;
 }
 
 export const useHallStore = create<HallState>((set, get) => ({
@@ -20,6 +23,7 @@ export const useHallStore = create<HallState>((set, get) => ({
     isLoading: false,
     isInitialLoaded: false,
     selectedHallId: sessionStorage.getItem('selected_available_hall_id'),
+    availabilityCache: {},
 
     setSelectedHallId: (id) => {
         if (id) {
@@ -72,6 +76,85 @@ export const useHallStore = create<HallState>((set, get) => ({
         } catch (error) {
             toast.error('Failed to update status');
             throw error;
+        }
+    },
+
+    fetchAvailability: async (hallId, month, force = false) => {
+        const { availabilityCache } = get();
+        const CACHE_TTL = 10000; // 10 seconds
+
+        const cachedEntry = availabilityCache[hallId]?.[month];
+        const isExpired = cachedEntry && (Date.now() - cachedEntry.timestamp > CACHE_TTL);
+
+        // Return cached data if available, not forced, and not expired
+        if (!force && cachedEntry && !isExpired) {
+            return cachedEntry.data;
+        }
+
+        try {
+            const data = await hallService.getAvailability(hallId, month);
+            const nonAvailableDates = data.nonAvailableDates || [];
+
+            set((state) => ({
+                availabilityCache: {
+                    ...state.availabilityCache,
+                    [hallId]: {
+                        ...(state.availabilityCache[hallId] || {}),
+                        [month]: {
+                            data: nonAvailableDates,
+                            timestamp: Date.now()
+                        }
+                    }
+                }
+            }));
+
+            return nonAvailableDates;
+        } catch (error) {
+            console.error(`Failed to fetch availability for ${month}`, error);
+            throw error;
+        }
+    },
+
+    fetchMultiAvailability: async (hallId, months, force = false) => {
+        const { availabilityCache } = get();
+        const CACHE_TTL = 10000; // 10 seconds
+        const now = Date.now();
+
+        // Filter for months that need fetching
+        const monthsToFetch = months.filter(month => {
+            if (force) return true;
+            const cachedEntry = availabilityCache[hallId]?.[month];
+            if (!cachedEntry) return true;
+            return (now - cachedEntry.timestamp > CACHE_TTL);
+        });
+
+        if (monthsToFetch.length === 0) return;
+
+        try {
+            // Service returns an array like [{month, nonAvailableDates, ...}]
+            // User requested ?month=M1&month=M2 format which we handled in hallService
+            const data = await hallService.getAvailability(hallId, monthsToFetch);
+
+            // Map the response array to the cache structure
+            set((state) => {
+                const newHallCache = { ...(state.availabilityCache[hallId] || {}) };
+
+                data.forEach((item: any) => {
+                    newHallCache[item.month] = {
+                        data: item.nonAvailableDates || [],
+                        timestamp: now
+                    };
+                });
+
+                return {
+                    availabilityCache: {
+                        ...state.availabilityCache,
+                        [hallId]: newHallCache
+                    }
+                };
+            });
+        } catch (error) {
+            console.error(`Failed to fetch multi-availability for ${monthsToFetch.join(', ')}`, error);
         }
     }
 }));
