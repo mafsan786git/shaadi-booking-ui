@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Plus, Trash } from 'lucide-react';
 import { Button } from '../common/Button';
-import type { HallRequest } from '../../types';
+import type { Hall, HallRequest } from '../../types';
 import { hallService } from '../../services/hallService';
 import { toast } from 'react-hot-toast';
 
@@ -9,6 +9,7 @@ interface CreateHallModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
+    hallToEdit?: Hall | null;
 }
 
 const initialFormState: HallRequest = {
@@ -28,10 +29,30 @@ const initialFormState: HallRequest = {
     contacts: ['']
 };
 
-export const CreateHallModal = ({ isOpen, onClose, onSuccess }: CreateHallModalProps) => {
+export const CreateHallModal = ({ isOpen, onClose, onSuccess, hallToEdit }: CreateHallModalProps) => {
     const [formData, setFormData] = useState<HallRequest>(initialFormState);
     const [loading, setLoading] = useState(false);
     const [newFacility, setNewFacility] = useState('');
+
+    useEffect(() => {
+        if (isOpen) {
+            if (hallToEdit) {
+                setFormData({
+                    name: hallToEdit.name,
+                    address: hallToEdit.address,
+                    lat: hallToEdit.lat || '0.0',
+                    lng: hallToEdit.lng || '0.0',
+                    capacity: hallToEdit.capacity,
+                    basePrice: hallToEdit.basePrice,
+                    facilities: hallToEdit.facilities,
+                    description: hallToEdit.description || '',
+                    contacts: hallToEdit.contacts.length > 0 ? hallToEdit.contacts : ['']
+                });
+            } else {
+                setFormData(initialFormState);
+            }
+        }
+    }, [isOpen, hallToEdit]);
 
     if (!isOpen) return null;
 
@@ -55,13 +76,20 @@ export const CreateHallModal = ({ isOpen, onClose, onSuccess }: CreateHallModalP
                 capacity: formData.capacity || 0,
                 basePrice: formData.basePrice || 0
             };
-            await hallService.createHall(submissionData);
-            toast.success('Hall created successfully');
+
+            if (hallToEdit) {
+                await hallService.updateHall(hallToEdit.hallId, submissionData);
+                toast.success('Hall updated successfully');
+            } else {
+                await hallService.createHall(submissionData);
+                toast.success('Hall created successfully');
+            }
+
             setFormData(initialFormState);
             onSuccess();
             onClose();
         } catch (error) {
-            toast.error('Failed to create hall');
+            toast.error(hallToEdit ? 'Failed to update hall' : 'Failed to create hall');
         } finally {
             setLoading(false);
         }
@@ -108,7 +136,7 @@ export const CreateHallModal = ({ isOpen, onClose, onSuccess }: CreateHallModalP
         <div className="modal-overlay">
             <div className="modal-content">
                 <div className="modal-header">
-                    <h3>Add New Hall</h3>
+                    <h3>{hallToEdit ? 'Edit Hall' : 'Add New Hall'}</h3>
                     <button onClick={onClose} className="close-btn"><X size={24} /></button>
                 </div>
 
@@ -274,7 +302,9 @@ export const CreateHallModal = ({ isOpen, onClose, onSuccess }: CreateHallModalP
 
                     <div className="modal-footer">
                         <Button variant="outline" onClick={onClose} type="button">Cancel</Button>
-                        <Button variant="primary" type="submit" isLoading={loading}>Create Hall</Button>
+                        <Button variant="primary" type="submit" isLoading={loading}>
+                            {hallToEdit ? 'Update Hall' : 'Create Hall'}
+                        </Button>
                     </div>
                 </form>
             </div >

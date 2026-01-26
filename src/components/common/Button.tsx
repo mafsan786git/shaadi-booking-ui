@@ -3,28 +3,28 @@ import clsx from 'clsx';
 import { Loader2 } from 'lucide-react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: 'primary' | 'outline' | 'ghost';
-    isLoading?: boolean;
+  variant?: 'primary' | 'outline' | 'ghost' | 'danger' | 'success';
+  isLoading?: boolean;
 }
 
 export const Button: React.FC<ButtonProps> = ({
-    children,
-    className,
-    variant = 'primary',
-    isLoading,
-    disabled,
-    ...props
+  children,
+  className,
+  variant = 'primary',
+  isLoading,
+  disabled,
+  ...props
 }) => {
-    return (
-        <button
-            className={clsx('btn', `btn-${variant}`, className)}
-            disabled={disabled || isLoading}
-            {...props}
-        >
-            {isLoading && <Loader2 className="spinner" size={16} />}
-            {children}
+  return (
+    <button
+      className={clsx('btn', `btn-${variant}`, className)}
+      disabled={disabled || isLoading}
+      {...props}
+    >
+      {isLoading && <Loader2 className="spinner" size={16} />}
+      {children}
 
-            <style>{`
+      <style>{`
         .spinner {
           margin-right: 0.5rem;
           animation: spin 1s linear infinite;
@@ -38,6 +38,6 @@ export const Button: React.FC<ButtonProps> = ({
           cursor: not-allowed;
         }
       `}</style>
-        </button>
-    );
+    </button>
+  );
 };

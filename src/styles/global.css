@@ -122,3 +122,21 @@ ol {
   background-color: var(--color-background);
   border-color: var(--color-text-muted);
 }
+
+.btn-danger {
+  background-color: var(--color-error);
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #dc2626;
+}
+
+.btn-success {
+  background-color: var(--color-success);
+  color: white;
+}
+
+.btn-success:hover {
+  background-color: #059669;
+}

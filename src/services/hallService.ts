@@ -22,5 +22,14 @@ export const hallService = {
     createHall: async (data: any): Promise<Hall> => {
         const response = await api.post('/hall/create', data);
         return response.data;
+    },
+
+    updateHallStatus: async (hallId: string, status: 'ACTIVE' | 'INACTIVE' | 'DELETED'): Promise<void> => {
+        await api.put(`/hall/${hallId}/status`, { status });
+    },
+
+    updateHall: async (hallId: string, data: any): Promise<Hall> => {
+        const response = await api.put(`/hall/${hallId}`, data);
+        return response.data;
     }
 };
