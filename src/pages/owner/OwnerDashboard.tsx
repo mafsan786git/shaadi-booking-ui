@@ -8,7 +8,7 @@ import { Button } from '../../components/common/Button';
 import { CreateHallModal } from '../../components/owner/CreateHallModal';
 
 export const OwnerDashboard = () => {
-    const { halls, isLoading, fetchHalls, updateHallStatus } = useHallStore();
+    const { halls, isLoading, fetchHalls, updateHallStatus, setSelectedHallId } = useHallStore();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [hallToEdit, setHallToEdit] = useState<Hall | null>(null);
     const navigate = useNavigate();
@@ -84,7 +84,8 @@ export const OwnerDashboard = () => {
                     {activeHalls.map(hall => (
                         <div key={hall.hallId} className="hall-card">
                             <div className="card-clickable-area" onClick={() => {
-                                navigate(`/owner/hall/${hall.hallId}/availability`);
+                                setSelectedHallId(hall.hallId);
+                                navigate(`/hall/availability`);
                             }}>
                                 <div className="card-top-row">
                                     <div className="status-container">

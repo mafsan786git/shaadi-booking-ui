@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Calendar as CalendarIcon, RefreshCcw } from 'lucide-react';
 import { AvailabilityCalendar } from '../../components/owner/AvailabilityCalendar';
 import { DayDetailsPanel } from '../../components/owner/DayDetailsPanel';
@@ -16,9 +16,8 @@ import type { DayAvailabilityResponse, Hall } from '../../types';
 import { toast } from 'react-hot-toast';
 
 export const HallAvailabilityPage: React.FC = () => {
-  const { hallId } = useParams<{ hallId: string }>();
   const navigate = useNavigate();
-  const { halls } = useHallStore();
+  const { halls, selectedHallId } = useHallStore();
 
   const [hall, setHall] = useState<Hall | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -27,27 +26,30 @@ export const HallAvailabilityPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (hallId) {
-      // First check if hall exists in global store
-      const cachedHall = halls.find(h => h.hallId === hallId);
-      if (cachedHall) {
-        setHall(cachedHall);
-      } else {
-        fetchHallDetails();
-      }
+    if (!selectedHallId) {
+      navigate('/dashboard');
+      return;
     }
-  }, [hallId, halls]);
+
+    // First check if hall exists in global store
+    const cachedHall = halls.find(h => h.hallId === selectedHallId);
+    if (cachedHall) {
+      setHall(cachedHall);
+    } else {
+      fetchHallDetails();
+    }
+  }, [selectedHallId, halls, navigate]);
 
   useEffect(() => {
-    if (hallId) {
+    if (selectedHallId) {
       fetchAvailability();
     }
-  }, [hallId, currentMonth]);
+  }, [selectedHallId, currentMonth]);
 
   const fetchHallDetails = async () => {
-    if (!hallId) return;
+    if (!selectedHallId) return;
     try {
-      const data = await hallService.getHallById(hallId);
+      const data = await hallService.getHallById(selectedHallId);
       setHall(data);
     } catch (error) {
       toast.error('Failed to fetch hall details');
@@ -55,11 +57,11 @@ export const HallAvailabilityPage: React.FC = () => {
   };
 
   const fetchAvailability = async () => {
-    if (!hallId) return;
+    if (!selectedHallId) return;
     setLoading(true);
     try {
       const monthStr = format(currentMonth, 'yyyy-MM');
-      const data = await hallService.getAvailability(hallId, monthStr);
+      const data = await hallService.getAvailability(selectedHallId, monthStr);
       setAvailability(data.nonAvailableDates || []);
     } catch (error) {
       toast.error('Failed to fetch availability');

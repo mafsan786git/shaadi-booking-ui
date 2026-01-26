@@ -36,7 +36,7 @@ function App() {
             // Inside Routes:
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/owner/hall/:hallId/availability" element={<HallAvailabilityPage />} />
+            <Route path="/hall/availability" element={<HallAvailabilityPage />} />
             {/* Redirect legacy specific routes to dashboard if needed, or just remove them. Removing them for cleaner URL enforcement. */}
           </Route>
         </Routes>

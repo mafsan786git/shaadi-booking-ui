@@ -7,16 +7,28 @@ interface HallState {
     halls: Hall[];
     isLoading: boolean;
     isInitialLoaded: boolean;
+    selectedHallId: string | null;
 
     // Actions
     fetchHalls: (force?: boolean) => Promise<void>;
     updateHallStatus: (hallId: string, status: Hall['status']) => Promise<void>;
+    setSelectedHallId: (id: string | null) => void;
 }
 
 export const useHallStore = create<HallState>((set, get) => ({
     halls: [],
     isLoading: false,
     isInitialLoaded: false,
+    selectedHallId: sessionStorage.getItem('selected_available_hall_id'),
+
+    setSelectedHallId: (id) => {
+        if (id) {
+            sessionStorage.setItem('selected_available_hall_id', id);
+        } else {
+            sessionStorage.removeItem('selected_available_hall_id');
+        }
+        set({ selectedHallId: id });
+    },
 
     fetchHalls: async (force = false) => {
         const { isInitialLoaded, isLoading } = get();
