@@ -15,6 +15,14 @@ export const AuthPage = () => {
     const [otp, setOtp] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    // Redirect if already logged in
+    const { isAuthenticated } = useAuthStore();
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/dashboard');
+        }
+    }, [isAuthenticated, navigate]);
+
     // Timer state
     const [retryDate, setRetryDate] = useState<Date | null>(null);
     const [timeLeft, setTimeLeft] = useState(0);
