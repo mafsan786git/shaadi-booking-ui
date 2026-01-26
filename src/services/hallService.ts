@@ -31,5 +31,12 @@ export const hallService = {
     updateHall: async (hallId: string, data: any): Promise<Hall> => {
         const response = await api.put(`/hall/${hallId}`, data);
         return response.data;
+    },
+
+    getAvailability: async (hallId: string, month: string): Promise<any> => {
+        const response = await api.get(`/public/hall/${hallId}/availability`, {
+            params: { month }
+        });
+        return response.data;
     }
 };

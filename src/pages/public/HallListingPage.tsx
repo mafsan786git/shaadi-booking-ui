@@ -53,8 +53,8 @@ export const HallListingPage = () => {
   if (!zipcode) return <div className="container">Please provide a zipcode to search.</div>;
 
   return (
-    <div className="container">
-      <header style={{ marginBottom: '2rem' }}>
+    <div className="container" style={{ paddingTop: '0.25rem' }}>
+      <header style={{ marginBottom: '1.5rem' }}>
         <h1>Venues in {zipcode}</h1>
         <p className="text-muted">{halls.length} results found</p>
       </header>

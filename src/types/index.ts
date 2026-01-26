@@ -61,6 +61,45 @@ export interface Hall {
 
 export type HallStatus = 'ACTIVE' | 'INACTIVE' | 'DELETED';
 
+export type BookingStatus = 'REQUESTED' | 'OWNER_RESPONDED' | 'CONFIRMED' | 'CANCELLED_BY_OWNER' | 'CANCELLED_BY_CUSTOMER' | 'DECLINED_BY_OWNER' | 'REJECTED_BY_CUSTOMER' | 'EXPIRED';
+
+export type EventType = 'WEDDING' | 'RECEPTION' | 'ENGAGEMENT' | 'BIRTHDAY' | 'ANNIVERSARY' | 'OTHER';
+
+export type AvailabilityStatus = 'AVAILABLE' | 'BOOKED' | 'BLOCKED' | 'PENDING';
+
+export interface Booking {
+    id: string;
+    hallId: string;
+    customerPhone: string;
+    customerName: string;
+    startDate: string;       // ISO timestamps
+    endDate: string;         // ISO timestamps
+    eventType: EventType;
+    totalGuest: number;
+    customerNote?: string;
+    status: BookingStatus;
+    finalPrice?: number;
+    ownerNote?: string;
+    createdBy: 'CUSTOMER_REQUEST' | 'OWNER_DIRECT';
+    createdAt: string;
+    updatedAt: string;
+    cancelledBy?: 'OWNER' | 'CUSTOMER';
+    cancelReason?: string;
+}
+
+export interface DayAvailabilityResponse {
+    date: string; // ISO Date YYYY-MM-DD
+    status: AvailabilityStatus;
+    note?: string; // only for BLOCKED
+    booking?: Booking; // If status is BOOKED or PENDING
+}
+
+export interface MonthlyAvailabilityResponse {
+    hallId: string;
+    month: string; // YYYY-MM
+    nonAvailableDates: DayAvailabilityResponse[];
+}
+
 export interface HallRequest {
     name: string;
     address: Address;

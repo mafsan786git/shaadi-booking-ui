@@ -1,0 +1,334 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ChevronLeft, Calendar as CalendarIcon, RefreshCcw } from 'lucide-react';
+import { AvailabilityCalendar } from '../../components/owner/AvailabilityCalendar';
+import { DayDetailsPanel } from '../../components/owner/DayDetailsPanel';
+import { hallService } from '../../services/hallService';
+import { useHallStore } from '../../context/useHallStore';
+import {
+  format,
+  parseISO,
+  isSameDay,
+  startOfMonth,
+  isSameMonth
+} from 'date-fns';
+import type { DayAvailabilityResponse, Hall } from '../../types';
+import { toast } from 'react-hot-toast';
+
+export const HallAvailabilityPage: React.FC = () => {
+  const { hallId } = useParams<{ hallId: string }>();
+  const navigate = useNavigate();
+  const { halls } = useHallStore();
+
+  const [hall, setHall] = useState<Hall | null>(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [availability, setAvailability] = useState<DayAvailabilityResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (hallId) {
+      // First check if hall exists in global store
+      const cachedHall = halls.find(h => h.hallId === hallId);
+      if (cachedHall) {
+        setHall(cachedHall);
+      } else {
+        fetchHallDetails();
+      }
+    }
+  }, [hallId, halls]);
+
+  useEffect(() => {
+    if (hallId) {
+      fetchAvailability();
+    }
+  }, [hallId, currentMonth]);
+
+  const fetchHallDetails = async () => {
+    if (!hallId) return;
+    try {
+      const data = await hallService.getHallById(hallId);
+      setHall(data);
+    } catch (error) {
+      toast.error('Failed to fetch hall details');
+    }
+  };
+
+  const fetchAvailability = async () => {
+    if (!hallId) return;
+    setLoading(true);
+    try {
+      const monthStr = format(currentMonth, 'yyyy-MM');
+      const data = await hallService.getAvailability(hallId, monthStr);
+      setAvailability(data.nonAvailableDates || []);
+    } catch (error) {
+      toast.error('Failed to fetch availability');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMonthChange = (date: Date) => {
+    setCurrentMonth(date);
+    // Default to 1st of the month when changing months
+    setSelectedDate(startOfMonth(date));
+  };
+
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
+  };
+
+  const handleGoToCurrentMonth = () => {
+    const now = new Date();
+    setCurrentMonth(now);
+    setSelectedDate(now);
+  };
+
+  const handleDirectBooking = (date: Date) => {
+    toast.success(`Booking request for ${format(date, 'MMM do')} coming soon!`);
+  };
+
+  if (!hall && !loading) return <div className="container">Hall not found</div>;
+
+  const selectedDayData = availability.find(d => isSameDay(parseISO(d.date), selectedDate));
+  const currentStatus = selectedDayData?.status || 'AVAILABLE';
+
+  const isShowingCurrentMonth = isSameMonth(currentMonth, new Date());
+
+  return (
+    <div className="container page-padding">
+      <div className="page-header">
+        <button className="back-btn" onClick={() => navigate('/dashboard')}>
+          <ChevronLeft size={20} />
+          <span>Back to Dashboard</span>
+        </button>
+      </div>
+
+      <div className="availability-hero">
+        <div className="hall-info-section">
+          <div className="hall-icon-container">
+            <CalendarIcon size={20} />
+          </div>
+          <div>
+            <h1 className="hall-name">{hall?.name || 'Loading...'}</h1>
+            <p className="page-subtitle">Availability & Bookings</p>
+          </div>
+        </div>
+        {!isShowingCurrentMonth && (
+          <button className="current-month-jump-icon" onClick={handleGoToCurrentMonth}>
+            <RefreshCcw size={16} />
+            <span className="jump-label">Current Month</span>
+          </button>
+        )}
+      </div>
+
+      <div className="availability-container">
+        <div className="calendar-section card">
+          {loading && <div className="loading-overlay">Loading...</div>}
+          <AvailabilityCalendar
+            currentMonth={currentMonth}
+            onMonthChange={handleMonthChange}
+            selectedDate={selectedDate}
+            onDateSelect={handleDateSelect}
+            availabilityData={availability}
+          />
+        </div>
+
+        <div className="details-section">
+          <DayDetailsPanel
+            selectedDate={selectedDate}
+            status={currentStatus}
+            booking={selectedDayData?.booking}
+            onDirectBooking={handleDirectBooking}
+          />
+
+          <div className="availability-legend card">
+            <div className="legend-item">
+              <div className="legend-color available"></div>
+              <span>Available</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-color booked"></div>
+              <span>Booked</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-color pending"></div>
+              <span>In Progress</span>
+            </div>
+            <div className="legend-item">
+              <div className="legend-color blocked"></div>
+              <span>Blocked</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        .page-padding {
+          padding-top: 0.25rem;
+          padding-bottom: 2rem;
+        }
+
+        .page-header {
+          margin-bottom: 0.5rem;
+        }
+
+        .back-btn {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          background: none;
+          border: none;
+          color: #4b5563;
+          cursor: pointer;
+          font-weight: 500;
+          padding: 0.25rem 0;
+          transition: color 0.2s;
+          font-size: 0.875rem;
+        }
+
+        .back-btn:hover {
+          color: #2563eb;
+        }
+
+        .availability-hero {
+          margin-bottom: 0.75rem;
+          background: white;
+          padding: 0.5rem 1rem;
+          border-radius: 10px;
+          border: 1px solid #f3f4f6;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          position: relative;
+          min-height: 60px;
+        }
+
+        .hall-info-section {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.75rem;
+          padding-top: 0.25rem;
+        }
+
+        .hall-icon-container {
+          background: #eff6ff;
+          color: #2563eb;
+          padding: 0.4rem;
+          border-radius: 6px;
+        }
+
+        .hall-name {
+          font-size: 1.15rem;
+          font-weight: 700;
+          color: #111827;
+          margin: 0;
+          line-height: 1.1;
+        }
+
+        .page-subtitle {
+          color: #6b7280;
+          margin: 0.1rem 0 0 0;
+          font-size: 0.7rem;
+        }
+
+        .current-month-jump-icon {
+          background: none;
+          border: none;
+          color: #2563eb;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 2px;
+          cursor: pointer;
+          padding: 0.25rem;
+          transition: all 0.2s;
+          position: absolute;
+          bottom: 0.5rem;
+          right: 0.75rem;
+        }
+
+        .current-month-jump-icon:hover {
+          color: #1e40af;
+          transform: translateY(-1px);
+        }
+
+        .jump-label {
+          font-size: 0.6rem;
+          font-weight: 600;
+          letter-spacing: 0.025em;
+        }
+
+        .availability-container {
+          display: grid;
+          grid-template-columns: 1.5fr 1fr;
+          gap: 1rem;
+          align-items: start;
+        }
+
+        .card {
+          background: white;
+          border-radius: 10px;
+          border: 1px solid #f3f4f6;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+          overflow: hidden;
+        }
+
+        .calendar-section {
+          padding: 0.75rem;
+          position: relative;
+        }
+
+        .availability-legend {
+          margin-top: 1rem;
+          padding: 0.75rem 1rem;
+          display: flex;
+          justify-content: space-between;
+          gap: 0.5rem;
+          flex-wrap: wrap;
+        }
+
+        .legend-item {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          font-size: 0.7rem;
+          font-weight: 500;
+          color: #64748b;
+        }
+
+        .legend-color {
+          width: 10px;
+          height: 10px;
+          border-radius: 3px;
+        }
+        .legend-color.available { background: #f0fdf4; border: 1px solid #dcfce7; }
+        .legend-color.booked { background: #fef2f2; border: 1px solid #fee2e2; }
+        .legend-color.pending { background: #fff7ed; border: 1px solid #ffedd5; }
+        .legend-color.blocked { background: #f8fafc; border: 1px solid #f1f5f9; }
+
+        .loading-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(255, 255, 255, 0.7);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10;
+          font-weight: 500;
+          color: #2563eb;
+        }
+
+        @media (max-width: 1024px) {
+          .availability-container {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+    </div>
+  );
+};

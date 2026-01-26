@@ -1,33 +1,23 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { hallService } from '../../services/hallService';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useHallStore } from '../../context/useHallStore';
 import type { Hall } from '../../types';
 import { toast } from 'react-hot-toast';
-import { Plus, Trash, MapPin, Users, ListOrdered, Filter } from 'lucide-react';
+import { Plus, Trash, MapPin, Users, ListOrdered } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { CreateHallModal } from '../../components/owner/CreateHallModal';
 
 export const OwnerDashboard = () => {
-    const [halls, setHalls] = useState<Hall[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { halls, isLoading, fetchHalls, updateHallStatus } = useHallStore();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [hallToEdit, setHallToEdit] = useState<Hall | null>(null);
+    const navigate = useNavigate();
     const [searchParams] = useSearchParams();
 
     useEffect(() => {
+        // fetchHalls handles silent background updates if already loaded
         fetchHalls();
-    }, [searchParams.get('refresh')]);
-
-    const fetchHalls = async () => {
-        try {
-            const data = await hallService.getOwnerHalls();
-            setHalls(data);
-        } catch (error) {
-            toast.error('Failed to fetch halls');
-        } finally {
-            setLoading(false);
-        }
-    };
+    }, [searchParams.get('refresh'), fetchHalls]);
 
     const handleCreateNew = () => {
         setHallToEdit(null);
@@ -37,11 +27,10 @@ export const OwnerDashboard = () => {
     const handleStatusChange = async (hallId: string, currentStatus: string) => {
         try {
             const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-            await hallService.updateHallStatus(hallId, newStatus as any);
+            await updateHallStatus(hallId, newStatus as any);
             toast.success(`Hall ${newStatus.toLowerCase()}d successfully`);
-            fetchHalls();
         } catch (error) {
-            toast.error('Failed to update status');
+            // Error handled in store
         }
     };
 
@@ -49,15 +38,19 @@ export const OwnerDashboard = () => {
         if (!window.confirm('Are you sure you want to delete this hall?')) return;
 
         try {
-            await hallService.updateHallStatus(hallId, 'DELETED');
+            await updateHallStatus(hallId, 'DELETED');
             toast.success('Hall deleted successfully');
-            fetchHalls();
         } catch (error) {
-            toast.error('Failed to delete hall');
+            // Error handled in store
         }
     };
 
-    if (loading) return <div>Loading...</div>;
+    // Only show full-page loading if it's the very first load and we're currently fetching
+    if (isLoading && halls.length === 0) return (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+            Loading...
+        </div>
+    );
 
     const activeHalls = halls.filter(h => h.status !== 'DELETED');
 
@@ -78,7 +71,7 @@ export const OwnerDashboard = () => {
             <CreateHallModal
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
-                onSuccess={fetchHalls}
+                onSuccess={() => fetchHalls(true)}
                 hallToEdit={hallToEdit}
             />
 
@@ -90,37 +83,44 @@ export const OwnerDashboard = () => {
                 <div className="hall-grid">
                     {activeHalls.map(hall => (
                         <div key={hall.hallId} className="hall-card">
-                            <div className="card-top-row">
-                                <div className="status-container">
-                                    <span className={`status-badge ${hall.status?.toLowerCase() || 'inactive'}`}>
-                                        {hall.status}
-                                    </span>
-                                </div>
-                                <button
-                                    className="delete-icon-btn"
-                                    onClick={() => handleDelete(hall.hallId)}
-                                    title="Delete Hall"
-                                >
-                                    <Trash size={20} />
-                                </button>
-                            </div>
-
-                            <div className="card-content">
-                                <h3 className="hall-name">{hall.name}</h3>
-
-                                <div className="hall-facilities">
-                                    {hall.facilities?.map((facility, index) => (
-                                        <span key={index} className="facility-tag">{facility}</span>
-                                    ))}
+                            <div className="card-clickable-area" onClick={() => {
+                                navigate(`/owner/hall/${hall.hallId}/availability`);
+                            }}>
+                                <div className="card-top-row">
+                                    <div className="status-container">
+                                        <span className={`status-badge ${hall.status?.toLowerCase() || 'inactive'}`}>
+                                            {hall.status}
+                                        </span>
+                                    </div>
+                                    <button
+                                        className="delete-icon-btn"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDelete(hall.hallId);
+                                        }}
+                                        title="Delete Hall"
+                                    >
+                                        <Trash size={20} />
+                                    </button>
                                 </div>
 
-                                <div className="hall-info-row">
-                                    <MapPin size={16} className="info-icon" />
-                                    <span>{hall.address?.city || 'N/A'}, {hall.address?.state || 'N/A'}</span>
-                                </div>
-                                <div className="hall-info-row">
-                                    <Users size={16} className="info-icon" />
-                                    <span>{hall.capacity} guests</span>
+                                <div className="card-content">
+                                    <h3 className="hall-name">{hall.name}</h3>
+
+                                    <div className="hall-facilities">
+                                        {hall.facilities?.map((facility, index) => (
+                                            <span key={index} className="facility-tag">{facility}</span>
+                                        ))}
+                                    </div>
+
+                                    <div className="hall-info-row">
+                                        <MapPin size={16} className="info-icon" />
+                                        <span>{hall.address?.city || 'N/A'}, {hall.address?.state || 'N/A'}</span>
+                                    </div>
+                                    <div className="hall-info-row">
+                                        <Users size={16} className="info-icon" />
+                                        <span>{hall.capacity} guests</span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -262,6 +262,15 @@ export const OwnerDashboard = () => {
                 .action-btn {
                     padding: 0.4rem 1rem;
                     font-size: 0.9rem;
+                }
+                .card-clickable-area {
+                    cursor: pointer;
+                    flex-grow: 1;
+                    display: flex;
+                    flex-direction: column;
+                }
+                .card-clickable-area:hover .hall-name {
+                    color: #2563eb;
                 }
             `}</style>
         </div>

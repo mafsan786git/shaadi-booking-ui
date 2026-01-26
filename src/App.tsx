@@ -7,6 +7,7 @@ import { HallDetailsPage } from './pages/public/HallDetailsPage';
 import { MainLayout } from './components/layout/MainLayout';
 import { ProfilePage } from './pages/common/ProfilePage';
 import { DashboardPage } from './pages/common/DashboardPage';
+import { HallAvailabilityPage } from './pages/owner/HallAvailabilityPage';
 
 import { useEffect } from 'react';
 import { useAuthStore } from './context/useAuthStore';
@@ -35,6 +36,7 @@ function App() {
             // Inside Routes:
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/owner/hall/:hallId/availability" element={<HallAvailabilityPage />} />
             {/* Redirect legacy specific routes to dashboard if needed, or just remove them. Removing them for cleaner URL enforcement. */}
           </Route>
         </Routes>

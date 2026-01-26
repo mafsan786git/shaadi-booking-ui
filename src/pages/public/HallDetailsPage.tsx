@@ -150,7 +150,7 @@ export const HallDetailsPage = () => {
                     padding-bottom: 4rem;
                 }
                 .breadcrumb {
-                    padding: 1.5rem 0;
+                    padding: 0.25rem 0 1rem 0;
                 }
                 .back-link {
                     display: flex;
