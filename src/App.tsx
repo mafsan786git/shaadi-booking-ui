@@ -5,6 +5,8 @@ import { LandingPage } from './pages/public/LandingPage';
 import { HallListingPage } from './pages/public/HallListingPage';
 import { HallDetailsPage } from './pages/public/HallDetailsPage';
 import { MainLayout } from './components/layout/MainLayout';
+import { ProfilePage } from './pages/common/ProfilePage';
+import { DashboardPage } from './pages/common/DashboardPage';
 
 import { useEffect } from 'react';
 import { useAuthStore } from './context/useAuthStore';
@@ -27,12 +29,13 @@ function App() {
             <Route path="/halls" element={<HallListingPage />} />
             <Route path="/halls/:id" element={<HallDetailsPage />} />
             <Route path="/auth" element={<AuthPage />} />
-            <Route path="/dashboard" element={
-              <div className="container" style={{ padding: '2rem' }}>
-                <h1>Dashboard Placeholder</h1>
-                <p>You are logged in!</p>
-              </div>
-            } />
+
+            // ...
+
+            // Inside Routes:
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            {/* Redirect legacy specific routes to dashboard if needed, or just remove them. Removing them for cleaner URL enforcement. */}
           </Route>
         </Routes>
       </div>

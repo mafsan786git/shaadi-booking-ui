@@ -8,9 +8,14 @@ export const hallService = {
         return response.data;
     },
 
-    // Public: Get specific hall details
     getHallById: async (hallId: string): Promise<Hall> => {
         const response = await api.get(`/public/hall/fetch/${hallId}`);
+        return response.data;
+    },
+
+    // Owner: Get own halls
+    getOwnerHalls: async (): Promise<Hall[]> => {
+        const response = await api.get('/hall/all');
         return response.data;
     }
 };

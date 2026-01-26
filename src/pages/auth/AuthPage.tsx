@@ -19,7 +19,7 @@ export const AuthPage = () => {
     const { isAuthenticated } = useAuthStore();
     useEffect(() => {
         if (isAuthenticated) {
-            navigate('/');
+            navigate('/dashboard');
         }
     }, [isAuthenticated, navigate]);
 

@@ -1,244 +1,359 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../../context/useAuthStore';
 import { Button } from '../common/Button';
-import { Home, User, LogOut, Menu, X } from 'lucide-react';
+import { User, LogOut, Search, MapPin, LayoutDashboard, ListOrdered } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export const Navbar = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, logout, isLoading } = useAuthStore();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const { user, isAuthenticated, logout, isLoading } = useAuthStore();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  // Close sidebar on navigation or resize
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-  const closeSidebar = () => setIsSidebarOpen(false);
+  // Derived state for zipcode logic
+  const urlZipcode = searchParams.get('zipcode');
+  const [searchValue, setSearchValue] = useState('');
+
+  // Reset search value on route change, or set default from params if needed
+  // However, for the "Name search", we want it empty initially probably?
+  // If not on halls page, we want it empty to accept zip.
+  // If ON halls page with zip, we can use it to filter names.
+
+  useEffect(() => {
+    setSearchValue('');
+  }, [location.pathname, urlZipcode]);
+
+  const handleLogoClick = () => {
+    if (urlZipcode) {
+      // "show the hall based on zipcode" -> Refresh / Re-navigate
+      navigate(`/halls?zipcode=${urlZipcode}`);
+    } else {
+      if (user?.role === 'ADMIN' || user?.role === 'OWNER') navigate('/dashboard');
+      else navigate('/'); // Customer Fallback to Landing
+    }
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const isHallListing = location.pathname.startsWith('/halls');
+
+    if (isHallListing && urlZipcode) {
+      // "ask to enter the hall name to be search"
+      // We are already searching by zip, now filtering/searching by name
+      // Navigate to same page with name query? Or just rely on this component passing it?
+      // "it should land on hall listing page based on zipcode"
+      navigate(`/halls?zipcode=${urlZipcode}&search=${searchValue}`);
+    } else {
+      // "enter zipcode only" -> Navigate to halls with zip
+      if (searchValue.trim().length >= 5) {
+        navigate(`/halls?zipcode=${searchValue}`);
+      }
+    }
+  };
 
   const handleLogout = () => {
     logout();
-    closeSidebar();
     navigate('/auth');
   };
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth > 768) closeSidebar();
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   return (
     <nav className="navbar">
       <div className="container nav-content">
-        <Link to="/" className="brand" onClick={closeSidebar}>
-          Shaadi<span className="brand-accent">Booking</span>
-        </Link>
 
-        {/* Desktop Links */}
-        <div className="nav-links desktop-only">
-          <Link to="/" className="nav-item">
-            <Home size={18} /> Home
-          </Link>
+        {/* LEFT SECTION: Logo + Location */}
+        <div className="nav-left">
+          <div className="brand" onClick={handleLogoClick}>
+            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1' }}>
+              <span style={{ fontSize: '1.2rem' }}>Shaadi</span>
+              <span className="brand-accent" style={{ fontSize: '1rem' }}>Booking</span>
+            </div>
+          </div>
 
+          {urlZipcode && (
+            <div className="location-badge">
+              <MapPin size={16} className="text-primary" />
+              <span>{urlZipcode}</span>
+            </div>
+          )}
+        </div>
+
+        {/* CENTER SECTION: Search Bar */}
+        <div className="nav-center">
+          {location.pathname !== '/' && (
+            <form onSubmit={handleSearchSubmit} className="search-form">
+              <input
+                type="text"
+                placeholder={location.pathname.startsWith('/halls') && urlZipcode ? "Search Hall Name..." : "Enter Zipcode"}
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                className="search-input"
+              />
+              <button type="submit" className="search-btn-icon">
+                <Search size={18} />
+              </button>
+            </form>
+          )}
+        </div>
+
+        {/* RIGHT SECTION: Auth + Dashboard + Bookings */}
+        <div className="nav-right">
+          {/* Dashboard */}
+          {isAuthenticated && (
+            <div className="nav-item" title="Dashboard" onClick={() => {
+              navigate('/dashboard');
+            }}>
+              <LayoutDashboard size={18} />
+              {/* User requested name "Dashboard" specifically? user said "Dashboard (based on role...)" */}
+              <span className="nav-label">Dashboard</span>
+            </div>
+          )}
+
+          {/* Bookings (Conditional) */}
+          {isAuthenticated && (user?.role === 'OWNER' || user?.role === 'CUSTOMER') && (
+            <div className="nav-item" title="My Bookings">
+              <ListOrdered size={18} />
+              <span className="nav-label">Bookings</span>
+            </div>
+          )}
+
+          {/* Login / Profile */}
           {isLoading ? null : isAuthenticated ? (
-            <>
-              <Link to="/dashboard" className="nav-item">
-                <User size={18} /> Profile
-              </Link>
-              <Button variant="ghost" onClick={handleLogout} className="logout-btn">
-                <LogOut size={18} /> Logout
-              </Button>
-            </>
+            <div className="nav-item profile-action" style={{ position: 'relative' }} title="Profile Menu">
+              <div
+                style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+              >
+                <User size={20} />
+                <span className="nav-label" style={{ marginLeft: '0.5rem' }}>{user?.name?.split(' ')[0]}</span>
+              </div>
+
+              {/* Profile Dropdown */}
+              {isProfileOpen && (
+                <div className="profile-dropdown">
+                  <div className="dropdown-item" onClick={() => {
+                    setIsProfileOpen(false);
+                    navigate('/profile');
+                  }}>
+                    <User size={16} /> Profile
+                  </div>
+                  <div className="dropdown-divider"></div>
+                  <div className="dropdown-item text-error" onClick={handleLogout}>
+                    <LogOut size={16} /> Logout
+                  </div>
+                </div>
+              )}
+            </div>
           ) : (
             <Link to="/auth">
               <Button variant="primary">Login</Button>
             </Link>
           )}
         </div>
-
-        {/* Mobile Toggle */}
-        <button className="mobile-toggle" onClick={toggleSidebar}>
-          {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-      </div>
-
-      {/* Mobile Sidebar Overlay */}
-      <div className={`sidebar-overlay ${isSidebarOpen ? 'open' : ''}`} onClick={closeSidebar} />
-
-      {/* Mobile Sidebar */}
-      <div className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <span className="brand">
-            Shaadi<span className="brand-accent">Booking</span>
-          </span>
-          <button onClick={closeSidebar}><X size={24} /></button>
-        </div>
-
-        <div className="sidebar-links">
-          <Link to="/" className="sidebar-item" onClick={closeSidebar}>
-            <Home size={20} /> Home
-          </Link>
-
-          {isLoading ? null : isAuthenticated ? (
-            <>
-              <Link to="/dashboard" className="sidebar-item" onClick={closeSidebar}>
-                <User size={20} /> Profile
-              </Link>
-              <button className="sidebar-item logout" onClick={handleLogout}>
-                <LogOut size={20} /> Logout
-              </button>
-            </>
-          ) : (
-            <Link to="/auth" className="sidebar-item active-btn" onClick={closeSidebar}>
-              <Button variant="primary" style={{ width: '100%' }}>Login</Button>
-            </Link>
-          )}
-        </div>
       </div>
 
       <style>{`
-        .navbar {
-          background: white;
-          border-bottom: 1px solid var(--color-border);
-          position: sticky;
-          top: 0;
-          z-index: 1000;
-          box-shadow: var(--shadow-sm);
-        }
-        .nav-content {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          height: 64px;
-        }
-        .brand {
-          font-size: 1.5rem;
-          font-weight: 700;
-          color: var(--color-text-main);
-          letter-spacing: -0.5px;
-        }
-        .brand-accent {
-          color: var(--color-primary);
-        }
-        
-        .nav-links {
-          display: flex;
-          align-items: center;
-          gap: 1.5rem;
-        }
-        .desktop-only {
-          display: none;
-        }
-        @media (min-width: 769px) {
-          .desktop-only {
-            display: flex;
-          }
-          .mobile-toggle {
-            display: none;
-          }
-        }
+                .navbar {
+                    background: white;
+                    border-bottom: 1px solid var(--color-border);
+                    position: sticky;
+                    top: 0;
+                    z-index: 1000;
+                    box-shadow: var(--shadow-sm);
+                    height: 64px;
+                    display: flex;
+                    align-items: center;
+                }
+                .nav-content {
+                    width: 100%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 0.5rem; /* Reduced gap */
+                }
+                
+                /* Left Section */
+                .nav-left {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    flex-shrink: 0; /* Prevent shrinking too much */
+                }
+                .brand {
+                    cursor: pointer;
+                    font-weight: 700;
+                    color: var(--color-text-main);
+                    letter-spacing: -0.5px;
+                }
+                .brand-accent { color: var(--color-primary); }
+                
+                .location-badge {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.25rem;
+                    font-size: 0.8rem;
+                    font-weight: 500;
+                    color: var(--color-text-muted);
+                    background: var(--color-background);
+                    padding: 0.2rem 0.4rem;
+                    border-radius: 4px;
+                    white-space: nowrap; /* Prevent wrapping */
+                }
+                .text-primary { color: var(--color-primary); }
 
-        .nav-item {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          font-weight: 500;
-          color: var(--color-text-muted);
-          transition: color 0.2s;
-        }
-        .nav-item:hover {
-          color: var(--color-primary);
-        }
-        .logout-btn {
-          color: var(--color-text-muted);
-          padding: 0.5rem;
-        }
-        .logout-btn:hover {
-          color: var(--color-error);
-          background: #fee2e2;
-        }
+                /* Center Section */
+                .nav-center {
+                    flex: 1;
+                    display: flex;
+                    justify-content: center;
+                    min-width: 0; /* Allow shrinking */
+                }
+                .search-form {
+                    width: 100%;
+                    max-width: 500px;
+                    display: flex;
+                    align-items: center;
+                    background: #f1f5f9;
+                    border-radius: 99px;
+                    padding: 0.25rem 0.25rem 0.25rem 0.75rem;
+                    transition: box-shadow 0.2s;
+                }
+                .search-form:focus-within {
+                    box-shadow: 0 0 0 2px var(--color-primary-light);
+                    background: white;
+                    border: 1px solid var(--color-primary);
+                }
+                .search-input {
+                    flex: 1;
+                    border: none;
+                    background: transparent;
+                    outline: none;
+                    font-size: 0.9rem;
+                    padding: 0.25rem;
+                    min-width: 0; /* specific for flex child */
+                }
+                .search-btn-icon {
+                    border: none;
+                    background: var(--color-primary);
+                    color: white;
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    flex-shrink: 0;
+                }
 
-        /* Mobile Sidebar */
-        .mobile-toggle {
-          color: var(--color-text-main);
-          padding: 0.5rem;
-        }
+                /* Right Section */
+                .nav-right {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    justify-content: flex-end;
+                    flex-shrink: 0;
+                }
+                .nav-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                }
+                .icon-btn-ghost {
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    padding: 0.25rem;
+                    color: var(--color-text-muted);
+                    margin-left: 0.25rem;
+                    border-radius: 50%;
+                }
+                .icon-btn-ghost:hover {
+                    background: #fee2e2;
+                    color: var(--color-error);
+                }
 
-        .sidebar-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: rgba(0, 0, 0, 0.5);
-          opacity: 0;
-          visibility: hidden;
-          transition: 0.3s;
-          z-index: 1100;
-        }
-        .sidebar-overlay.open {
-          opacity: 1;
-          visibility: visible;
-        }
+                /* Make labels visible but better styled for mobile */
+                .nav-label {
+                   font-size: 0.75rem;
+                   white-space: nowrap;
+                }
 
-        .sidebar {
-          position: fixed;
-          top: 0;
-          right: -280px;
-          width: 280px;
-          height: 100%;
-          background: white;
-          transition: 0.3s ease-in-out;
-          z-index: 1200;
-          padding: 1.5rem;
-          box-shadow: -4px 0 15px rgba(0,0,0,0.1);
-          display: flex;
-          flex-direction: column;
-        }
-        .sidebar.open {
-          right: 0;
-        }
+                @media (min-width: 768px) {
+                    .nav-content { gap: 1rem; }
+                    .nav-left { gap: 1.5rem; min-width: 150px; }
+                    .nav-right { gap: 1.5rem; min-width: 150px; }
+                    /* .nav-label { font-size: 1rem; }  Default is inherited/normal */
+                    .search-form { padding: 0.25rem 0.5rem 0.25rem 1rem; }
+                    .search-btn-icon { width: 32px; height: 32px; }
+                }
+                
+                @media (max-width: 768px) {
+                     /* Mobile adjustments to fit everything */
+                    .nav-left .brand span { font-size: 1rem !important; }
+                    .nav-left .brand .brand-accent { font-size: 0.8rem !important; }
+                    
+                    .nav-right {
+                       gap: 0.5rem;
+                    }
+                    .nav-item {
+                        flex-direction: column;
+                        gap: 0;
+                        align-items: center;
+                        text-align: center;
+                    }
+                    .nav-label {
+                        font-size: 0.65rem;
+                        line-height: 1;
+                        margin-top: 2px;
+                    }
+                    .profile-action {
+                        flex-direction: column;
+                        gap: 0;
+                    }
+                    .profile-action span {
+                        font-size: 0.65rem;
+                        max-width: 50px;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        margin-left: 0 !important; 
+                    }
+                }
 
-        .sidebar-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 2rem;
-          padding-bottom: 1rem;
-          border-bottom: 1px solid var(--color-border);
-        }
-
-        .sidebar-links {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-        }
-        .sidebar-item {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          font-size: 1.125rem;
-          font-weight: 600;
-          color: var(--color-text-main);
-          padding: 0.75rem 1rem;
-          border-radius: var(--radius-md);
-          transition: 0.2s;
-        }
-        .sidebar-item:hover {
-          background: var(--color-background);
-          color: var(--color-primary);
-        }
-        .sidebar-item.logout {
-          margin-top: auto;
-          color: var(--color-error);
-        }
-        .sidebar-item.logout:hover {
-          background: #fee2e2;
-        }
-        .active-btn {
-          padding: 0;
-        }
-      `}</style>
+                .profile-dropdown {
+                    position: absolute;
+                    top: 100%;
+                    right: 0;
+                    margin-top: 0.5rem;
+                    background: white;
+                    border: 1px solid var(--color-border);
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    min-width: 150px;
+                    z-index: 1001;
+                    overflow: hidden;
+                }
+                .dropdown-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    padding: 0.75rem 1rem;
+                    font-size: 0.9rem;
+                    color: var(--color-text-main);
+                    cursor: pointer;
+                    transition: background 0.2s;
+                }
+                .dropdown-item:hover {
+                    background: var(--color-background);
+                }
+                .dropdown-divider {
+                    height: 1px;
+                    background: var(--color-border);
+                }
+                .text-error { color: var(--color-error); }
+                .text-error:hover { background: #fee2e2; }
+            `}</style>
     </nav>
   );
 };

@@ -6,93 +6,94 @@ import type { Hall } from '../../types';
 import { Button } from '../../components/common/Button';
 
 export const HallListingPage = () => {
-    const [searchParams] = useSearchParams();
-    const zipcode = searchParams.get('zipcode');
+  const [searchParams] = useSearchParams();
+  const zipcode = searchParams.get('zipcode');
+  const searchQuery = searchParams.get('search')?.toLowerCase() || '';
 
-    const [halls, setHalls] = useState<Hall[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState('');
+  const [halls, setHalls] = useState<Hall[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
-    useEffect(() => {
-        const fetchHalls = async () => {
-            if (!zipcode) return;
-            setIsLoading(true);
-            try {
-                const data = await hallService.getHallsByZipcode(zipcode);
-                setHalls(data);
-            } catch (err) {
-                console.error(err);
-                setError('Failed to fetch halls. Please try again.');
-                // Mock data for fallback dev experience if API fails
-                /*
-                setHalls([
-                   {
-                     hallId: '1',
-                     name: 'Grand Imperial Hall',
-                     address: { address: 'Plot 45', city: 'Delhi', state: 'DL', zipcode: '110025' },
-                     capacity: 500,
-                     basePrice: 50000,
-                     description: 'Luxury hall for grand weddings.',
-                     facilities: ['AC', 'Parking', 'WiFi'],
-                     contacts: [],
-                     lat: '0', lng: '0',
-                     status: 'ACTIVE',
-                     media: [{ id: 'm1', hallId: '1', type: 'IMAGE', driveUrl: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3', thumbnailUrl: '', sortOrder: 1 }]
-                   }
-                ]);
-                */
-            } finally {
-                setIsLoading(false);
-            }
-        };
+  useEffect(() => {
+    const fetchHalls = async () => {
+      if (!zipcode) return;
+      setIsLoading(true);
+      try {
+        const data = await hallService.getHallsByZipcode(zipcode);
+        setHalls(data);
+      } catch (err) {
+        console.error(err);
+        setError('Failed to fetch halls. Please try again.');
+        // Mock data for fallback dev experience if API fails
+        /*
+        setHalls([
+           {
+             hallId: '1',
+             name: 'Grand Imperial Hall',
+             address: { address: 'Plot 45', city: 'Delhi', state: 'DL', zipcode: '110025' },
+             capacity: 500,
+             basePrice: 50000,
+             description: 'Luxury hall for grand weddings.',
+             facilities: ['AC', 'Parking', 'WiFi'],
+             contacts: [],
+             lat: '0', lng: '0',
+             status: 'ACTIVE',
+             media: [{ id: 'm1', hallId: '1', type: 'IMAGE', driveUrl: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3', thumbnailUrl: '', sortOrder: 1 }]
+           }
+        ]);
+        */
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-        fetchHalls();
-    }, [zipcode]);
+    fetchHalls();
+  }, [zipcode]);
 
-    if (!zipcode) return <div className="container">Please provide a zipcode to search.</div>;
+  if (!zipcode) return <div className="container">Please provide a zipcode to search.</div>;
 
-    return (
-        <div className="container" style={{ padding: '2rem 1rem' }}>
-            <header style={{ marginBottom: '2rem' }}>
-                <h1>Venues in {zipcode}</h1>
-                <p className="text-muted">{halls.length} results found</p>
-            </header>
+  return (
+    <div className="container">
+      <header style={{ marginBottom: '2rem' }}>
+        <h1>Venues in {zipcode}</h1>
+        <p className="text-muted">{halls.length} results found</p>
+      </header>
 
-            {isLoading && <p>Loading venues...</p>}
-            {error && <p className="error-text">{error}</p>}
+      {isLoading && <p>Loading venues...</p>}
+      {error && <p className="error-text">{error}</p>}
 
-            <div className="hall-grid">
-                {halls.map((hall) => (
-                    <div key={hall.hallId} className="hall-card">
-                        <div className="hall-image">
-                            {hall.media?.[0] ? (
-                                <img src={hall.media[0].driveUrl} alt={hall.name} />
-                            ) : (
-                                <div className="placeholder-img">No Image</div>
-                            )}
-                        </div>
-                        <div className="hall-details">
-                            <h3>{hall.name}</h3>
-                            <p className="location">
-                                <MapPin size={14} /> {hall.address.city}, {hall.address.state}
-                            </p>
-
-                            <div className="hall-meta">
-                                <span><Users size={14} /> {hall.capacity} Guests</span>
-                                <span><IndianRupee size={14} /> {hall.basePrice.toLocaleString()} / day</span>
-                            </div>
-
-                            <div className="hall-actions">
-                                <Link to={`/hall/${hall.hallId}`}>
-                                    <Button variant="outline" style={{ width: '100%' }}>View Details</Button>
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
-                ))}
+      <div className="hall-grid">
+        {halls.filter(hall => !searchQuery || hall.name.toLowerCase().includes(searchQuery)).map((hall) => (
+          <div key={hall.hallId} className="hall-card">
+            <div className="hall-image">
+              {hall.media?.[0] ? (
+                <img src={hall.media[0].driveUrl} alt={hall.name} />
+              ) : (
+                <div className="placeholder-img">No Image</div>
+              )}
             </div>
+            <div className="hall-details">
+              <h3>{hall.name}</h3>
+              <p className="location">
+                <MapPin size={14} /> {hall.address.city}, {hall.address.state}
+              </p>
 
-            <style>{`
+              <div className="hall-meta">
+                <span><Users size={14} /> {hall.capacity} Guests</span>
+                <span><IndianRupee size={14} /> {hall.basePrice.toLocaleString()} / day</span>
+              </div>
+
+              <div className="hall-actions">
+                <Link to={`/hall/${hall.hallId}`}>
+                  <Button variant="outline" style={{ width: '100%' }}>View Details</Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <style>{`
         .hall-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -148,6 +149,6 @@ export const HallListingPage = () => {
         .text-muted { color: var(--color-text-muted); }
         .error-text { color: var(--color-error); }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 };
