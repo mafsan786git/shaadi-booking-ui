@@ -65,7 +65,7 @@ export type BookingStatus = 'REQUESTED' | 'OWNER_RESPONDED' | 'CONFIRMED' | 'CAN
 
 export type EventType = 'WEDDING' | 'RECEPTION' | 'ENGAGEMENT' | 'BIRTHDAY' | 'ANNIVERSARY' | 'OTHER';
 
-export type AvailabilityStatus = 'AVAILABLE' | 'BOOKED' | 'BLOCKED' | 'PENDING';
+export type AvailabilityStatus = 'AVAILABLE' | 'CONFRIMED' | 'BLOCKED' | 'IN_PROGRESS';
 
 export interface Booking {
     id: string;

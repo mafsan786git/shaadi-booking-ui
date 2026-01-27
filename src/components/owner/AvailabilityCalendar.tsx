@@ -272,14 +272,14 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
           height: 6px;
           border-radius: 50%;
         }
-        .status-dot.booked { background: #ef4444; }
+        .status-dot.confrimed { background: #ef4444; }
         .status-dot.blocked { background: #94a3b8; }
-        .status-dot.pending { background: #f59e0b; }
+        .status-dot.in_progress { background: #f59e0b; }
         .status-dot.available { background: #22c55e; }
 
-        .status-booked:not(.selected) { background: #fef2f2; color: #991b1b; }
+        .status-confrimed:not(.selected) { background: #fef2f2; color: #991b1b; }
         .status-blocked:not(.selected) { background: #f8fafc; color: #64748b; }
-        .status-pending:not(.selected) { background: #fff7ed; color: #9a3412; }
+        .status-in_progress:not(.selected) { background: #fff7ed; color: #9a3412; }
         .status-available:not(.selected) { background: #f0fdf4; color: #166534; }
       `}</style>
     </div>
