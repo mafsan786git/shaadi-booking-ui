@@ -11,6 +11,7 @@ import {
   addMonths,
   subMonths
 } from 'date-fns';
+import { useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { DayAvailabilityResponse } from '../../types';
 
@@ -39,10 +40,23 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
     end: endDate,
   });
 
+  const availabilityMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    if (!Array.isArray(availabilityData)) return map;
+
+    availabilityData.forEach((d) => {
+      if (d && d.date) {
+        const dateKey = d.date.split('T')[0];
+        map[dateKey] = d.status;
+      }
+    });
+
+    return map;
+  }, [availabilityData]);
+
   const getDayStatus = (date: Date) => {
-    const isoDate = format(date, 'yyyy-MM-dd');
-    const dayData = availabilityData.find(d => d.date === isoDate);
-    return dayData?.status || 'AVAILABLE';
+    const calendarDateStr = format(date, 'yyyy-MM-dd');
+    return availabilityMap[calendarDateStr] || 'AVAILABLE';
   };
 
   const handlePrevMonth = () => onMonthChange(subMonths(currentMonth, 1));
