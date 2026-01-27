@@ -111,3 +111,24 @@ export interface HallRequest {
     description: string;
     contacts: string[];
 }
+
+export interface BookingRequest {
+    hallId: string;
+    customerPhone: string;
+    customerName: string;
+    startDate: string;       // ISO date YYYY-MM-DD
+    endDate?: string;        // ISO date YYYY-MM-DD
+    eventType: EventType;
+    totalGuest: number;
+    customerNote?: string;
+    status?: BookingStatus;
+    finalPrice?: number;
+    ownerNote?: string;
+
+}
+
+export interface BookingResponseRequest {
+    status: 'CONFIRMED' | 'DECLINED_BY_OWNER';
+    ownerNote?: string;
+    finalPrice?: number;
+}

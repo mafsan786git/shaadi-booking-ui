@@ -1,20 +1,7 @@
 import api from './api';
-import type { Booking, EventType } from '../types';
+import type { Booking, BookingRequest, BookingResponseRequest } from '../types';
 
-export interface BookingRequest {
-    hallId: string;
-    startDate: string;
-    endDate: string;
-    eventType: EventType;
-    totalGuest: number;
-    customerNote?: string;
-}
 
-export interface BookingResponseRequest {
-    status: 'CONFIRMED' | 'DECLINED_BY_OWNER';
-    ownerNote?: string;
-    finalPrice?: number;
-}
 
 export const bookingService = {
     requestBooking: async (request: BookingRequest): Promise<Booking> => {

@@ -14,8 +14,9 @@ import {
   addMonths,
   subMonths
 } from 'date-fns';
-import type { Hall } from '../../types';
+import type { Hall, BookingRequest } from '../../types';
 import { toast } from 'react-hot-toast';
+import { BookingModal } from '../../components/common/BookingModal';
 
 export const HallAvailabilityPage: React.FC = () => {
   const navigate = useNavigate();
@@ -33,6 +34,8 @@ export const HallAvailabilityPage: React.FC = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [bookingInitialData, setBookingInitialData] = useState<Partial<BookingRequest>>({});
 
   useEffect(() => {
     if (!selectedHallId) {
@@ -125,7 +128,15 @@ export const HallAvailabilityPage: React.FC = () => {
   };
 
   const handleDirectBooking = (date: Date) => {
-    toast.success(`Booking request for ${format(date, 'MMM do')} coming soon!`);
+    setBookingInitialData({
+      startDate: format(date, 'yyyy-MM-dd'),
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleBookingSuccess = () => {
+    // Refresh availability for the current month
+    fetchAvailability(selectedHallId!, format(currentMonth, 'yyyy-MM'), true);
   };
 
   if (!hall && !loading) return <div className="container">Hall not found</div>;
@@ -194,6 +205,8 @@ export const HallAvailabilityPage: React.FC = () => {
               <div className="legend-color booked"></div>
               <span>Booked</span>
             </div>
+
+
             <div className="legend-item">
               <div className="legend-color pending"></div>
               <span>In Progress</span>
@@ -205,6 +218,17 @@ export const HallAvailabilityPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+
+
+      <BookingModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={handleBookingSuccess}
+        initialData={bookingInitialData}
+        mode="OWNER"
+        hallId={selectedHallId || ''}
+      />
 
       <style>{`
         .page-padding {
@@ -372,7 +396,7 @@ export const HallAvailabilityPage: React.FC = () => {
           }
         }
       `}</style>
-    </div>
+    </div >
   );
 };
 

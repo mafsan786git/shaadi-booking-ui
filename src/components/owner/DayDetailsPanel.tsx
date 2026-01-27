@@ -29,7 +29,7 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
       </div>
 
       <div className="panel-content">
-        {status === 'BOOKED' && booking && (
+        {status === 'CONFRIMED' && booking && (
           <div className="booking-details">
             <div className="detail-item">
               <User size={18} className="detail-icon" />
