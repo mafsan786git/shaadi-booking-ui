@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar as CalendarIcon, Users, Phone, User, FileText, IndianRupee } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import type { BookingRequest, EventType, BookingStatus } from '../../types';
+import type { BookingRequest, EventType } from '../../types';
 import { bookingService } from '../../services/bookingService';
+import { hallService } from '../../services/hallService';
+import type { Hall, DayAvailabilityResponse } from '../../types';
+import { format, parseISO } from 'date-fns';
 
 interface BookingModalProps {
     isOpen: boolean;
@@ -12,6 +15,15 @@ interface BookingModalProps {
     mode: 'CUSTOMER' | 'OWNER';
     hallId: string;
 }
+
+const EVENT_TYPE_LABELS: Record<EventType, string> = {
+    'WEDDING': 'Wedding',
+    'RECEPTION': 'Reception',
+    'ENGAGEMENT': 'Engagement',
+    'BIRTHDAY': 'Birthday',
+    'ANNIVERSARY': 'Anniversary',
+    'OTHER': 'Other'
+};
 
 const EVENT_TYPES: EventType[] = ['WEDDING', 'RECEPTION', 'ENGAGEMENT', 'BIRTHDAY', 'ANNIVERSARY', 'OTHER'];
 
@@ -23,7 +35,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     mode,
     hallId
 }) => {
+    const today = format(new Date(), 'yyyy-MM-dd');
     const [loading, setLoading] = useState(false);
+    const [hall, setHall] = useState<Hall | null>(null);
+    const [availability, setAvailability] = useState<DayAvailabilityResponse[]>([]);
     const [formData, setFormData] = useState<Partial<BookingRequest>>({
         hallId,
         eventType: 'WEDDING',
@@ -40,8 +55,24 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 status: mode === 'OWNER' ? 'CONFIRMED' : undefined,
                 ...initialData
             });
+            fetchData();
         }
     }, [isOpen, initialData, hallId, mode]);
+
+    const fetchData = async () => {
+        try {
+            const hallData = await hallService.getHallById(hallId);
+            setHall(hallData);
+
+            if (initialData?.startDate) {
+                const month = format(parseISO(initialData.startDate), 'yyyy-MM');
+                const availabilityData = await hallService.getAvailability(hallId, month);
+                setAvailability(availabilityData.nonAvailableDates || availabilityData || []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch modal data:', error);
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -64,6 +95,39 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 return;
             }
 
+            // Hall Capacity Validation
+            if (hall && formData.totalGuest > hall.capacity) {
+                toast.error(`Total guests cannot exceed hall capacity (${hall.capacity})`);
+                setLoading(false);
+                return;
+            }
+
+            // Date availability validation
+            if (formData.startDate) {
+                if (formData.startDate < today) {
+                    toast.error('Cannot select a past date');
+                    setLoading(false);
+                    return;
+                }
+
+                const isUnavailable = availability.some(d =>
+                    d.date === formData.startDate &&
+                    (d.status === 'BLOCKED' || d.status === 'CONFRIMED' || d.status === 'IN_PROGRESS')
+                );
+                if (isUnavailable) {
+                    toast.error('Selected date is not available');
+                    setLoading(false);
+                    return;
+                }
+            }
+
+            // End date validation
+            if (formData.endDate && formData.startDate && formData.endDate < formData.startDate) {
+                toast.error('End date cannot be before start date');
+                setLoading(false);
+                return;
+            }
+
             // Prepare request
             const request: BookingRequest = {
                 hallId,
@@ -74,9 +138,9 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 eventType: formData.eventType as EventType,
                 totalGuest: Number(formData.totalGuest),
                 customerNote: formData.customerNote,
+                requirements: formData.requirements || [],
                 // Owner specific fields
                 ...(mode === 'OWNER' && {
-                    status: formData.status,
                     finalPrice: formData.finalPrice ? Number(formData.finalPrice) : undefined,
                     ownerNote: formData.ownerNote
                 })
@@ -142,7 +206,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                                 onChange={e => handleChange('eventType', e.target.value)}
                             >
                                 {EVENT_TYPES.map(type => (
-                                    <option key={type} value={type}>{type}</option>
+                                    <option key={type} value={type}>{EVENT_TYPE_LABELS[type]}</option>
                                 ))}
                             </select>
                         </div>
@@ -164,7 +228,20 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                             <input
                                 type="date"
                                 value={formData.startDate || ''}
-                                onChange={e => handleChange('startDate', e.target.value)}
+                                onChange={async (e) => {
+                                    const newDate = e.target.value;
+                                    handleChange('startDate', newDate);
+                                    if (newDate) {
+                                        try {
+                                            const month = format(parseISO(newDate), 'yyyy-MM');
+                                            const availabilityData = await hallService.getAvailability(hallId, month);
+                                            setAvailability(availabilityData.nonAvailableDates || availabilityData || []);
+                                        } catch (error) {
+                                            console.error('Failed to fetch availability for date:', error);
+                                        }
+                                    }
+                                }}
+                                min={today}
                                 required
                             />
                         </div>
@@ -180,46 +257,71 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                         </div>
 
                         {/* Owner Specific Fields */}
-                        {mode === 'OWNER' && (
-                            <>
-                                <div className="form-group full-width">
-                                    <label>Booking Status</label>
-                                    <div className="status-options">
-                                        {(['CONFIRMED', 'BLOCKED'] as BookingStatus[]).map(status => (
-                                            <button
-                                                key={status}
-                                                type="button"
-                                                className={`status-chip ${formData.status === status ? 'active' : ''}`}
-                                                onClick={() => handleChange('status', status)}
-                                            >
-                                                {status}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="form-group">
-                                    <label><IndianRupee size={14} /> Final Price</label>
-                                    <input
-                                        type="number"
-                                        value={formData.finalPrice || ''}
-                                        onChange={e => handleChange('finalPrice', e.target.value)}
-                                        placeholder="0.00"
-                                    />
-                                </div>
-                            </>
-                        )}
-
-                        {/* Notes */}
-                        <div className="form-group full-width">
-                            <label><FileText size={14} /> {mode === 'OWNER' ? 'Owner Note' : 'Message'}</label>
-                            <textarea
-                                value={mode === 'OWNER' ? formData.ownerNote : formData.customerNote || ''}
-                                onChange={e => handleChange(mode === 'OWNER' ? 'ownerNote' : 'customerNote', e.target.value)}
-                                rows={3}
-                                placeholder="Any additional details..."
+                        <div className="form-group">
+                            <label><IndianRupee size={14} /> Final Price</label>
+                            <input
+                                type="number"
+                                value={formData.finalPrice || ''}
+                                onChange={e => handleChange('finalPrice', e.target.value)}
+                                placeholder="0.00"
                             />
                         </div>
+                    </div>
+
+                    {/* Requirements */}
+                    <div className="form-group full-width">
+                        <label><FileText size={14} /> Special Requirements</label>
+                        <div className="requirements-input-container">
+                            <input
+                                type="text"
+                                placeholder="Add a requirement and press Enter"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        const value = (e.target as HTMLInputElement).value.trim();
+                                        if (value) {
+                                            const currentReqs = formData.requirements || [];
+                                            if (!currentReqs.includes(value)) {
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    requirements: [...currentReqs, value]
+                                                }));
+                                            }
+                                            (e.target as HTMLInputElement).value = '';
+                                        }
+                                    }
+                                }}
+                            />
+                            <div className="requirements-list">
+                                {(formData.requirements || []).map((req, index) => (
+                                    <div key={index} className="requirement-tag">
+                                        <span>{req}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    requirements: (prev.requirements || []).filter((_, i) => i !== index)
+                                                }));
+                                            }}
+                                        >
+                                            <X size={12} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Notes */}
+                    <div className="form-group full-width">
+                        <label><FileText size={14} /> {mode === 'OWNER' ? 'Owner Note' : 'Message'}</label>
+                        <textarea
+                            value={mode === 'OWNER' ? formData.ownerNote : formData.customerNote || ''}
+                            onChange={e => handleChange(mode === 'OWNER' ? 'ownerNote' : 'customerNote', e.target.value)}
+                            rows={3}
+                            placeholder="Any additional details..."
+                        />
                     </div>
 
                     <div className="modal-footer">
@@ -229,7 +331,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                         </button>
                     </div>
                 </form>
-            </div>
+            </div >
 
             <style>{`
                 .modal-overlay {
@@ -425,12 +527,47 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                         background: white;
                         box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05);
                     }
-                    .btn-primary, .btn-secondary {
+                .btn-primary, .btn-secondary {
                         flex: 1;
                         padding: 0.85rem;
                     }
                 }
+
+                /* Requirements Styling */
+                .requirements-input-container {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.75rem;
+                }
+                .requirements-list {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 0.5rem;
+                }
+                .requirement-tag {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.4rem;
+                    background: #f1f5f9;
+                    color: #475569;
+                    padding: 0.25rem 0.75rem;
+                    border-radius: 9999px;
+                    font-size: 0.8rem;
+                    font-weight: 500;
+                    border: 1px solid #e2e8f0;
+                }
+                .requirement-tag button {
+                    background: transparent;
+                    border: none;
+                    color: #94a3b8;
+                    cursor: pointer;
+                    display: flex;
+                    padding: 0;
+                }
+                .requirement-tag button:hover {
+                    color: #ef4444;
+                }
             `}</style>
-        </div>
+        </div >
     );
 };

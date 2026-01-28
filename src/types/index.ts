@@ -124,7 +124,7 @@ export interface BookingRequest {
     status?: BookingStatus;
     finalPrice?: number;
     ownerNote?: string;
-
+    requirements?: string[];
 }
 
 export interface BookingResponseRequest {
