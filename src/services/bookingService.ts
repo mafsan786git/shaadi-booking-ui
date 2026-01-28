@@ -58,5 +58,10 @@ export const bookingService = {
     getBookingDetails: async (id: string): Promise<Booking> => {
         const response = await api.get(`/booking/${id}`);
         return response.data;
+    },
+
+    getBookingsForMonth: async (hallId: string, month: string): Promise<Booking[]> => {
+        const response = await api.get(`/booking/hall/${hallId}?month=${month}`);
+        return response.data;
     }
 };

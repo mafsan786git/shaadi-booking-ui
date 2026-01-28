@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Calendar as CalendarIcon, RefreshCcw } from 'lucide-react';
 import { AvailabilityCalendar } from '../../components/owner/AvailabilityCalendar';
 import { DayDetailsPanel } from '../../components/owner/DayDetailsPanel';
+import { bookingService } from '../../services/bookingService';
 import { hallService } from '../../services/hallService';
 import { useHallStore } from '../../context/useHallStore';
 import {
@@ -12,9 +13,10 @@ import {
   startOfMonth,
   isSameMonth,
   addMonths,
-  subMonths
+  subMonths,
+  isWithinInterval
 } from 'date-fns';
-import type { Hall, BookingRequest } from '../../types';
+import type { Hall, BookingRequest, Booking } from '../../types';
 import { toast } from 'react-hot-toast';
 import { BookingModal } from '../../components/common/BookingModal';
 
@@ -36,6 +38,7 @@ export const HallAvailabilityPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [bookingInitialData, setBookingInitialData] = useState<Partial<BookingRequest>>({});
+  const [monthBookings, setMonthBookings] = useState<Booking[]>([]);
 
   useEffect(() => {
     if (!selectedHallId) {
@@ -88,11 +91,17 @@ export const HallAvailabilityPage: React.FC = () => {
       if (!cachedEntry?.data) setLoading(true);
 
       try {
-        await fetchAvailability(selectedHallId, monthStr, isInitialLand);
+        const [_, bookings] = await Promise.all([
+          fetchAvailability(selectedHallId, monthStr, isInitialLand),
+          bookingService.getBookingsForMonth(selectedHallId, monthStr)
+        ]);
+        setMonthBookings(bookings);
+
         setLoading(false);
         prefetchAdjacentMonths(selectedHallId, currentMonth, isInitialLand);
         hasInitiallyFetchedRef.current = true;
       } catch (error) {
+        console.error(error);
         toast.error('Failed to update availability');
         setLoading(false);
       }
@@ -137,12 +146,38 @@ export const HallAvailabilityPage: React.FC = () => {
   const handleBookingSuccess = () => {
     // Refresh availability for the current month
     fetchAvailability(selectedHallId!, format(currentMonth, 'yyyy-MM'), true);
+    setIsModalOpen(false);
+  };
+
+  const handleEditBooking = (booking: Booking) => {
+    setBookingInitialData({
+      customerName: booking.customerName,
+      customerPhone: booking.customerPhone,
+      startDate: booking.startDate,
+      endDate: booking.endDate,
+      eventType: booking.eventType,
+      totalGuest: booking.totalGuest,
+      customerNote: booking.customerNote,
+      ownerNote: booking.ownerNote,
+      finalPrice: booking.finalPrice,
+      status: booking.status,
+    });
+    setIsModalOpen(true);
   };
 
   if (!hall && !loading) return <div className="container">Hall not found</div>;
 
   const currentMonthStr = format(currentMonth, 'yyyy-MM');
   const monthAvailability = (selectedHallId && availabilityCache[selectedHallId]?.[currentMonthStr]?.data) || [];
+
+
+  // Find booking from the dedicated API call
+  const selectedBooking = monthBookings.find(b => {
+    return isWithinInterval(selectedDate, {
+      start: parseISO(b.startDate),
+      end: parseISO(b.endDate)
+    });
+  });
 
   const selectedDayData = monthAvailability.find((d: any) => d?.date && isSameDay(parseISO(d.date), selectedDate));
   const currentStatus = selectedDayData?.status || 'AVAILABLE';
@@ -192,8 +227,9 @@ export const HallAvailabilityPage: React.FC = () => {
           <DayDetailsPanel
             selectedDate={selectedDate}
             status={currentStatus}
-            booking={selectedDayData?.booking}
+            booking={selectedBooking || selectedDayData?.booking}
             onDirectBooking={handleDirectBooking}
+            onEditBooking={handleEditBooking}
           />
 
           <div className="availability-legend card">

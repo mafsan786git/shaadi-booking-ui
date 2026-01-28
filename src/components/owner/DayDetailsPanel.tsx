@@ -1,6 +1,6 @@
 import React from 'react';
-import { format } from 'date-fns';
-import { Calendar, User, Users, Info, Plus } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { Calendar, User, Users, Info, Plus, Pencil } from 'lucide-react';
 import type { Booking, AvailabilityStatus } from '../../types';
 import { Button } from '../common/Button';
 
@@ -9,6 +9,7 @@ interface DayDetailsPanelProps {
   status: AvailabilityStatus;
   booking?: Booking;
   onDirectBooking: (date: Date) => void;
+  onEditBooking?: (booking: Booking) => void;
 }
 
 export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
@@ -16,6 +17,7 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
   status,
   booking,
   onDirectBooking,
+  onEditBooking
 }) => {
   const formattedDate = format(selectedDate, 'EEEE, MMMM do, yyyy');
 
@@ -29,42 +31,71 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
       </div>
 
       <div className="panel-content">
-        {status === 'CONFRIMED' && booking && (
-          <div className="booking-details">
-            <div className="detail-item">
-              <User size={18} className="detail-icon" />
-              <div>
-                <p className="detail-label">Customer</p>
-                <p className="detail-value">{booking.customerName}</p>
-              </div>
+        {booking ? (
+          <div className="booking-card">
+            <div className="card-header">
+              <h4 className="customer-name">{booking.customerName}</h4>
+              <button
+                className="edit-btn"
+                onClick={() => onEditBooking?.(booking)}
+                title="Edit Booking"
+              >
+                <Pencil size={16} />
+              </button>
             </div>
-            <div className="detail-item">
-              <Calendar size={18} className="detail-icon" />
-              <div>
-                <p className="detail-label">Event Type</p>
-                <p className="detail-value">{booking.eventType}</p>
-              </div>
-            </div>
-            <div className="detail-item">
-              <Users size={18} className="detail-icon" />
-              <div>
-                <p className="detail-label">Guests</p>
-                <p className="detail-value">{booking.totalGuest} People</p>
-              </div>
-            </div>
-            {booking.customerNote && (
-              <div className="detail-item">
-                <Info size={18} className="detail-icon" />
-                <div>
-                  <p className="detail-label">Note</p>
-                  <p className="detail-value note">{booking.customerNote}</p>
+
+            <div className="card-content">
+              <div className="info-row">
+                <div className="info-item">
+                  <span className="label">Event</span>
+                  <span className="value">{booking.eventType}</span>
+                </div>
+                <div className="info-item right">
+                  <span className="label">Guests</span>
+                  <span className="value">{booking.totalGuest}</span>
                 </div>
               </div>
-            )}
-          </div>
-        )}
 
-        {status === 'AVAILABLE' && (
+              <div className="info-row">
+                <div className="info-item full">
+                  <span className="label">Date</span>
+                  <span className="value date-value">
+                    {booking.startDate === booking.endDate
+                      ? format(parseISO(booking.startDate), 'dd MMM yyyy')
+                      : `${format(parseISO(booking.startDate), 'dd MMM yyyy')} - ${format(parseISO(booking.endDate), 'dd MMM yyyy')}`
+                    }
+                  </span>
+                </div>
+              </div>
+
+              <div className="info-row">
+                <div className="info-item">
+                  <span className="label">Price</span>
+                  <span className="value price">
+                    {booking.finalPrice ? `₹${booking.finalPrice.toLocaleString()}` : '-'}
+                  </span>
+                </div>
+                <div className="info-item right">
+                  <span className="label">Status</span>
+                  <span className={`status-text ${booking.status.toLowerCase()}`}>
+                    {booking.status}
+                  </span>
+                </div>
+              </div>
+
+              {booking.customerNote && (
+                <div className="info-row">
+                  <div className="info-item full">
+                    <span className="label">Note</span>
+                    <span className="value note">{booking.customerNote}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null}
+
+        {!booking && status === 'AVAILABLE' && (
           <div className="empty-state">
             <p className="empty-text">No bookings for this date yet.</p>
             <Button
@@ -77,7 +108,7 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
           </div>
         )}
 
-        {status === 'BLOCKED' && (
+        {!booking && status === 'BLOCKED' && (
           <div className="blocked-message">
             <Info size={24} style={{ color: '#9ca3af', marginBottom: '0.5rem' }} />
             <p className="empty-text">This date is manually blocked.</p>
@@ -167,6 +198,117 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
         .direct-booking-btn {
           width: 100%;
         }
+
+        /* Booking Card Styles */
+        .booking-card {
+          background: white;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          overflow: hidden;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .card-header {
+          padding: 0.75rem 1rem;
+          background: #f8fafc;
+          border-bottom: 1px solid #e2e8f0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .customer-name {
+          margin: 0;
+          font-size: 0.95rem;
+          font-weight: 600;
+          color: #1e293b;
+        }
+
+        .edit-btn {
+          background: white;
+          border: 1px solid #cbd5e1;
+          color: #64748b;
+          border-radius: 4px;
+          padding: 0.25rem;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
+        }
+
+        .edit-btn:hover {
+          color: #2563eb;
+          border-color: #2563eb;
+        }
+
+        .card-content {
+          padding: 1rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.85rem;
+        }
+
+        .info-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 1rem;
+        }
+
+        .info-item {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+        
+        .info-item.right {
+          align-items: flex-end;
+          text-align: right;
+        }
+        
+        .info-item.full {
+          width: 100%;
+        }
+
+        .label {
+          font-size: 0.7rem;
+          color: #64748b;
+          text-transform: uppercase;
+          font-weight: 600;
+          letter-spacing: 0.03em;
+        }
+
+        .value {
+          font-size: 0.9rem;
+          color: #0f172a;
+          font-weight: 500;
+        }
+
+        .value.date-value {
+          font-weight: 600;
+          color: #2563eb;
+        }
+        
+        .value.price {
+          font-family: monospace;
+          font-weight: 600;
+        }
+
+        .value.note {
+           font-style: italic;
+           color: #475569;
+           font-size: 0.85rem;
+        }
+
+        .status-text {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-text.confirmed { color: #166534; }
+        .status-text.requested { color: #d97706; }
+        .status-text.cancelled { color: #ef4444; }
       `}</style>
     </div>
   );
