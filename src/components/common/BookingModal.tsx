@@ -48,16 +48,29 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
     useEffect(() => {
         if (isOpen) {
+            document.body.style.overflow = 'hidden';
+            // Normalize initial startDate if it's in the past
+            const finalInitialData = { ...initialData };
+            if (finalInitialData.startDate && finalInitialData.startDate < today) {
+                finalInitialData.startDate = today;
+            }
+
             setFormData({
                 hallId,
                 eventType: 'WEDDING',
                 totalGuest: 100,
                 status: mode === 'OWNER' ? 'CONFIRMED' : undefined,
-                ...initialData
+                ...finalInitialData
             });
             fetchData();
+        } else {
+            document.body.style.overflow = 'unset';
         }
-    }, [isOpen, initialData, hallId, mode]);
+
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen, initialData, hallId, mode, today]);
 
     const fetchData = async () => {
         try {
@@ -96,7 +109,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             }
 
             // Hall Capacity Validation
-            if (hall && formData.totalGuest > hall.capacity) {
+            if (hall && Number(formData.totalGuest) > hall.capacity) {
                 toast.error(`Total guests cannot exceed hall capacity (${hall.capacity})`);
                 setLoading(false);
                 return;
@@ -172,156 +185,174 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="modal-body">
-                    <div className="form-grid">
-                        {/* Customer Details */}
-                        <div className="form-group">
-                            <label><User size={14} /> Customer Name *</label>
-                            <input
-                                type="text"
-                                value={formData.customerName || ''}
-                                onChange={e => handleChange('customerName', e.target.value)}
-                                placeholder="Enter full name"
-                                required
-                            />
-                        </div>
+                <form onSubmit={handleSubmit} className="modal-form">
+                    <div className="modal-body">
+                        <div className="form-grid">
+                            {/* Customer Details */}
+                            <div className="form-group">
+                                <label><User size={14} /> Customer Name *</label>
+                                <input
+                                    type="text"
+                                    value={formData.customerName || ''}
+                                    onChange={e => handleChange('customerName', e.target.value)}
+                                    placeholder="Enter full name"
+                                    required
+                                />
+                            </div>
 
-                        <div className="form-group">
-                            <label><Phone size={14} /> Phone Number *</label>
-                            <input
-                                type="tel"
-                                value={formData.customerPhone || ''}
-                                onChange={e => handleChange('customerPhone', e.target.value)}
-                                placeholder="9876543210"
-                                required
-                                maxLength={10}
-                            />
-                        </div>
+                            <div className="form-group">
+                                <label><Phone size={14} /> Phone Number *</label>
+                                <input
+                                    type="tel"
+                                    value={formData.customerPhone || ''}
+                                    onChange={e => handleChange('customerPhone', e.target.value)}
+                                    placeholder="9876543210"
+                                    required
+                                    maxLength={10}
+                                />
+                            </div>
 
-                        {/* Event Details */}
-                        <div className="form-group">
-                            <label><CalendarIcon size={14} /> Event Type *</label>
-                            <select
-                                value={formData.eventType}
-                                onChange={e => handleChange('eventType', e.target.value)}
-                            >
-                                {EVENT_TYPES.map(type => (
-                                    <option key={type} value={type}>{EVENT_TYPE_LABELS[type]}</option>
-                                ))}
-                            </select>
-                        </div>
+                            {/* Event Details */}
+                            <div className="form-group">
+                                <label><CalendarIcon size={14} /> Event Type *</label>
+                                <select
+                                    value={formData.eventType}
+                                    onChange={e => handleChange('eventType', e.target.value)}
+                                >
+                                    {EVENT_TYPES.map(type => (
+                                        <option key={type} value={type}>{EVENT_TYPE_LABELS[type]}</option>
+                                    ))}
+                                </select>
+                            </div>
 
-                        <div className="form-group">
-                            <label><Users size={14} /> Total Guests *</label>
-                            <input
-                                type="number"
-                                value={formData.totalGuest || ''}
-                                onChange={e => handleChange('totalGuest', e.target.value)}
-                                min={1}
-                                required
-                            />
-                        </div>
-
-                        {/* Dates */}
-                        <div className="form-group">
-                            <label>Start Date *</label>
-                            <input
-                                type="date"
-                                value={formData.startDate || ''}
-                                onChange={async (e) => {
-                                    const newDate = e.target.value;
-                                    handleChange('startDate', newDate);
-                                    if (newDate) {
-                                        try {
-                                            const month = format(parseISO(newDate), 'yyyy-MM');
-                                            const availabilityData = await hallService.getAvailability(hallId, month);
-                                            setAvailability(availabilityData.nonAvailableDates || availabilityData || []);
-                                        } catch (error) {
-                                            console.error('Failed to fetch availability for date:', error);
+                            <div className="form-group">
+                                <label><Users size={14} /> Total Guests *</label>
+                                <input
+                                    type="number"
+                                    value={formData.totalGuest || ''}
+                                    onChange={e => {
+                                        const value = Number(e.target.value);
+                                        if (hall && value > hall.capacity) {
+                                            toast.error(`Total guests cannot exceed hall capacity (${hall.capacity})`);
+                                            handleChange('totalGuest', hall.capacity);
+                                            return;
                                         }
-                                    }
-                                }}
-                                min={today}
-                                required
-                            />
-                        </div>
+                                        handleChange('totalGuest', e.target.value);
+                                    }}
+                                    min={1}
+                                    max={hall?.capacity}
+                                    required
+                                />
+                            </div>
 
-                        <div className="form-group">
-                            <label>End Date</label>
-                            <input
-                                type="date"
-                                value={formData.endDate || ''}
-                                onChange={e => handleChange('endDate', e.target.value)}
-                                min={formData.startDate}
-                            />
-                        </div>
+                            {/* Dates */}
+                            <div className="form-group">
+                                <label>Start Date *</label>
+                                <input
+                                    type="date"
+                                    value={formData.startDate || ''}
+                                    onChange={async (e) => {
+                                        const newDate = e.target.value;
+                                        // JS Guard: Prevent past dates even if picker allows it
+                                        if (newDate && newDate < today) {
+                                            handleChange('startDate', today);
+                                            toast.error('Cannot select a past date');
+                                            return;
+                                        }
 
-                        {/* Owner Specific Fields */}
-                        <div className="form-group">
-                            <label><IndianRupee size={14} /> Final Price</label>
-                            <input
-                                type="number"
-                                value={formData.finalPrice || ''}
-                                onChange={e => handleChange('finalPrice', e.target.value)}
-                                placeholder="0.00"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Requirements */}
-                    <div className="form-group full-width">
-                        <label><FileText size={14} /> Special Requirements</label>
-                        <div className="requirements-input-container">
-                            <input
-                                type="text"
-                                placeholder="Add a requirement and press Enter"
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        const value = (e.target as HTMLInputElement).value.trim();
-                                        if (value) {
-                                            const currentReqs = formData.requirements || [];
-                                            if (!currentReqs.includes(value)) {
-                                                setFormData(prev => ({
-                                                    ...prev,
-                                                    requirements: [...currentReqs, value]
-                                                }));
+                                        handleChange('startDate', newDate);
+                                        if (newDate) {
+                                            try {
+                                                const month = format(parseISO(newDate), 'yyyy-MM');
+                                                const availabilityData = await hallService.getAvailability(hallId, month);
+                                                setAvailability(availabilityData.nonAvailableDates || availabilityData || []);
+                                            } catch (error) {
+                                                console.error('Failed to fetch availability for date:', error);
                                             }
-                                            (e.target as HTMLInputElement).value = '';
                                         }
-                                    }
-                                }}
-                            />
-                            <div className="requirements-list">
-                                {(formData.requirements || []).map((req, index) => (
-                                    <div key={index} className="requirement-tag">
-                                        <span>{req}</span>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setFormData(prev => ({
-                                                    ...prev,
-                                                    requirements: (prev.requirements || []).filter((_, i) => i !== index)
-                                                }));
-                                            }}
-                                        >
-                                            <X size={12} />
-                                        </button>
-                                    </div>
-                                ))}
+                                    }}
+                                    min={today}
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label>End Date</label>
+                                <input
+                                    type="date"
+                                    value={formData.endDate || ''}
+                                    onChange={e => handleChange('endDate', e.target.value)}
+                                    min={formData.startDate}
+                                />
+                            </div>
+
+                            {/* Owner Specific Fields */}
+                            <div className="form-group">
+                                <label><IndianRupee size={14} /> Final Price</label>
+                                <input
+                                    type="number"
+                                    value={formData.finalPrice || ''}
+                                    onChange={e => handleChange('finalPrice', e.target.value)}
+                                    placeholder="0.00"
+                                />
                             </div>
                         </div>
-                    </div>
 
-                    {/* Notes */}
-                    <div className="form-group full-width">
-                        <label><FileText size={14} /> {mode === 'OWNER' ? 'Owner Note' : 'Message'}</label>
-                        <textarea
-                            value={mode === 'OWNER' ? formData.ownerNote : formData.customerNote || ''}
-                            onChange={e => handleChange(mode === 'OWNER' ? 'ownerNote' : 'customerNote', e.target.value)}
-                            rows={3}
-                            placeholder="Any additional details..."
-                        />
+                        {/* Requirements */}
+                        <div className="form-group full-width">
+                            <label><FileText size={14} /> Special Requirements</label>
+                            <div className="requirements-input-container">
+                                <input
+                                    type="text"
+                                    placeholder="Add a requirement and press Enter"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            const value = (e.target as HTMLInputElement).value.trim();
+                                            if (value) {
+                                                const currentReqs = formData.requirements || [];
+                                                if (!currentReqs.includes(value)) {
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        requirements: [...currentReqs, value]
+                                                    }));
+                                                }
+                                                (e.target as HTMLInputElement).value = '';
+                                            }
+                                        }
+                                    }}
+                                />
+                                <div className="requirements-list">
+                                    {(formData.requirements || []).map((req, index) => (
+                                        <div key={index} className="requirement-tag">
+                                            <span>{req}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        requirements: (prev.requirements || []).filter((_, i) => i !== index)
+                                                    }));
+                                                }}
+                                            >
+                                                <X size={12} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Notes */}
+                        <div className="form-group full-width">
+                            <label><FileText size={14} /> {mode === 'OWNER' ? 'Owner Note' : 'Message'}</label>
+                            <textarea
+                                value={mode === 'OWNER' ? formData.ownerNote : formData.customerNote || ''}
+                                onChange={e => handleChange(mode === 'OWNER' ? 'ownerNote' : 'customerNote', e.target.value)}
+                                rows={3}
+                                placeholder="Any additional details..."
+                            />
+                        </div>
                     </div>
 
                     <div className="modal-footer">
@@ -389,10 +420,17 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     background: #f1f5f9;
                     color: #0f172a;
                 }
+                .modal-form {
+                    display: flex;
+                    flex-direction: column;
+                    flex: 1;
+                    overflow: hidden;
+                }
                 .modal-body {
                     padding: 1.5rem;
                     overflow-y: auto;
                     flex: 1;
+                    overscroll-behavior: contain;
                     /* Smooth scrolling */
                     -webkit-overflow-scrolling: touch;
                 }
@@ -511,25 +549,33 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     }
                     .modal-container {
                         width: 100%;
-                        height: 100%;
-                        height: 100dvh;
-                        max-height: 100dvh;
-                        border-radius: 0;
+                        height: 90vh; /* Fixed height ratio for consistency */
+                        max-height: 90vh;
+                        border-radius: 20px 20px 0 0;
+                        margin-top: auto;
                         animation: slideUp 0.3s ease-out;
                     }
+                    .modal-form {
+                        height: calc(90vh - 65px); /* Header height approx 65px */
+                    }
                     .modal-header {
-                        border-radius: 0;
-                        padding: 1rem;
+                        padding: 1rem 1.25rem;
+                    }
+                    .modal-body {
+                        padding: 1.25rem;
                     }
                     .modal-footer {
-                        border-radius: 0;
-                        padding: 1rem;
+                        padding: 1rem 1.25rem;
                         background: white;
-                        box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05);
+                        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+                        position: sticky;
+                        bottom: 0;
+                        z-index: 10;
                     }
-                .btn-primary, .btn-secondary {
+                    .btn-primary, .btn-secondary {
                         flex: 1;
-                        padding: 0.85rem;
+                        padding: 0.8rem;
+                        font-size: 0.9rem;
                     }
                 }
 
