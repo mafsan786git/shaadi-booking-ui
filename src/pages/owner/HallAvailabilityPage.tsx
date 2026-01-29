@@ -182,12 +182,12 @@ export const HallAvailabilityPage: React.FC = () => {
   const monthAvailability = (selectedHallId && availabilityCache[selectedHallId]?.[currentMonthStr]?.data) || [];
 
 
-  // Find booking from the dedicated API call
-  const selectedBooking = monthBookings.find(b => {
-    return isWithinInterval(selectedDate, {
-      start: parseISO(b.startDate),
-      end: parseISO(b.endDate)
-    });
+  // Filter bookings that overlap with the selected date
+  const selectedDayBookings = monthBookings.filter(b => {
+    const s = format(parseISO(b.startDate), 'yyyy-MM-dd');
+    const e = format(parseISO(b.endDate), 'yyyy-MM-dd');
+    const curr = format(selectedDate, 'yyyy-MM-dd');
+    return curr >= s && curr <= e;
   });
 
   const selectedDayData = monthAvailability.find((d: any) => d?.date && isSameDay(parseISO(d.date), selectedDate));
@@ -239,8 +239,8 @@ export const HallAvailabilityPage: React.FC = () => {
             selectedDate={selectedDate}
             status={currentStatus}
             note={selectedDayData?.note}
-            bookings={monthBookings}
-            selectedBookingId={selectedBooking?.id}
+            bookings={selectedDayBookings}
+            selectedBookingId={selectedDayBookings[0]?.id}
             onDirectBooking={handleDirectBooking}
             onEditBooking={handleEditBooking}
           />
