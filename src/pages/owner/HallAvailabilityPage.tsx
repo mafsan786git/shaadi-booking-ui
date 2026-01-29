@@ -37,6 +37,7 @@ export const HallAvailabilityPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalReadOnly, setIsModalReadOnly] = useState(false);
   const [bookingInitialData, setBookingInitialData] = useState<Partial<BookingRequest>>({});
   const [monthBookings, setMonthBookings] = useState<Booking[]>([]);
 
@@ -140,12 +141,21 @@ export const HallAvailabilityPage: React.FC = () => {
     setBookingInitialData({
       startDate: format(date, 'yyyy-MM-dd'),
     });
+    setIsModalReadOnly(false);
     setIsModalOpen(true);
   };
 
-  const handleBookingSuccess = () => {
-    // Refresh availability for the current month
-    fetchAvailability(selectedHallId!, format(currentMonth, 'yyyy-MM'), true);
+  const handleBookingSuccess = async () => {
+    const monthStr = format(currentMonth, 'yyyy-MM');
+    // Refresh availability and bookings for the current month
+    try {
+      await Promise.all([
+        fetchAvailability(selectedHallId!, monthStr, true),
+        bookingService.getBookingsForMonth(selectedHallId!, monthStr).then(bookings => setMonthBookings(bookings))
+      ]);
+    } catch (error) {
+      console.error('Failed to refresh data after booking:', error);
+    }
     setIsModalOpen(false);
   };
 
@@ -162,6 +172,7 @@ export const HallAvailabilityPage: React.FC = () => {
       finalPrice: booking.finalPrice,
       status: booking.status,
     });
+    setIsModalReadOnly(true);
     setIsModalOpen(true);
   };
 
@@ -228,7 +239,8 @@ export const HallAvailabilityPage: React.FC = () => {
             selectedDate={selectedDate}
             status={currentStatus}
             note={selectedDayData?.note}
-            booking={selectedBooking || selectedDayData?.booking}
+            bookings={monthBookings}
+            selectedBookingId={selectedBooking?.id}
             onDirectBooking={handleDirectBooking}
             onEditBooking={handleEditBooking}
           />
@@ -265,6 +277,7 @@ export const HallAvailabilityPage: React.FC = () => {
         initialData={bookingInitialData}
         mode="OWNER"
         hallId={selectedHallId || ''}
+        readOnly={isModalReadOnly}
       />
 
       <style>{`

@@ -8,7 +8,8 @@ interface DayDetailsPanelProps {
   selectedDate: Date;
   status: AvailabilityStatus;
   note?: string;
-  booking?: Booking;
+  bookings: Booking[];
+  selectedBookingId?: string;
   onDirectBooking: (date: Date) => void;
   onEditBooking?: (booking: Booking) => void;
 }
@@ -17,7 +18,8 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
   selectedDate,
   status,
   note,
-  booking,
+  bookings = [],
+  selectedBookingId,
   onDirectBooking,
   onEditBooking
 }) => {
@@ -36,12 +38,18 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
     }
   };
 
-  /* Helper to format booking status */
-  const formatBookingStatus = (status: string) => {
-    return status
+  /* Helper to format any enum-like string (First letter capital, rest small) */
+  const formatEnum = (value: string) => {
+    if (!value) return '';
+    return value
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');
+  };
+
+  /* Helper to format booking status */
+  const formatBookingStatus = (status: string) => {
+    return formatEnum(status);
   };
 
   /* Helper to get color for booking status */
@@ -70,62 +78,69 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
         </span>
       </div>
 
-      {/* 2. Booking Details Card */}
-      {booking && (
-        <div className="detail-card booking-card">
-          {/* Top Row: Name & View */}
-          <div className="bc-row top-row">
-            <h4 className="customer-name">{booking.customerName}</h4>
-            <button
-              className="view-btn"
-              onClick={() => onEditBooking?.(booking)}
-              title="View Booking"
-            >
-              View
-            </button>
-          </div>
+      {/* 2. Booking Details Cards List - Only show if current date has a booking */}
+      {selectedBookingId && (
+        <div className="bookings-list-container">
+          {bookings.map((booking) => {
+            const isSelected = !!selectedBookingId && booking.id === selectedBookingId;
+            const style = getBookingStatusStyle(booking.status);
 
-          {/* Middle Row: Date, Event, Guest */}
-          <div className="bc-middle">
-            <div className="bc-info-line bc-date">
-              <Calendar size={12} style={{ marginRight: '4px', opacity: 0.7 }} />
-              {booking.startDate === booking.endDate
-                ? format(parseISO(booking.startDate), 'dd MMM yyyy')
-                : `${format(parseISO(booking.startDate), 'dd MMM')} - ${format(parseISO(booking.endDate), 'dd MMM yyyy')}`
-              }
-            </div>
-            <div className="bc-info-line">
-              <span style={{ opacity: 0.7 }}>Event:</span> {booking.eventType}
-            </div>
-            <div className="bc-info-line">
-              <span style={{ opacity: 0.7 }}>Guests:</span> {booking.totalGuest}
-            </div>
-          </div>
-
-          {/* Bottom Row: Price & Status */}
-          <div className="bc-row bottom-row">
-            <div className="price-tag">
-              {booking.finalPrice ? `₹${booking.finalPrice.toLocaleString()}` : '-'}
-            </div>
-            {(() => {
-              const style = getBookingStatusStyle(booking.status);
-              return (
+            return (
+              <div key={booking.id} className={`detail-card booking-card ${isSelected ? 'selected-card' : ''}`}>
+                {/* Top Row: Name & View - Clickable */}
                 <div
-                  className="status-tag"
-                  style={{ color: style.color, backgroundColor: style.bg }}
+                  className="bc-row top-row clickable-header"
+                  onClick={() => onEditBooking?.(booking)}
+                  title="View Booking Details"
                 >
-                  {formatBookingStatus(booking.status)}
+                  <h4 className="customer-name">{booking.customerName}</h4>
+                  <button
+                    className="view-btn"
+                    type="button"
+                  >
+                    View
+                  </button>
                 </div>
-              );
-            })()}
-          </div>
+
+                {/* Middle Row: Date, Event, Guest */}
+                <div className="bc-middle">
+                  <div className="bc-info-line bc-date">
+                    <Calendar size={12} style={{ marginRight: '4px', opacity: 0.7 }} />
+                    {booking.startDate === booking.endDate
+                      ? format(parseISO(booking.startDate), 'dd MMM yyyy')
+                      : `${format(parseISO(booking.startDate), 'dd MMM')} - ${format(parseISO(booking.endDate), 'dd MMM yyyy')}`
+                    }
+                  </div>
+                  <div className="bc-info-line">
+                    <span style={{ opacity: 0.7 }}>Event:</span> {formatEnum(booking.eventType)}
+                  </div>
+                  <div className="bc-info-line">
+                    <span style={{ opacity: 0.7 }}>Guests:</span> {booking.totalGuest}
+                  </div>
+                </div>
+
+                {/* Bottom Row: Price & Status */}
+                <div className="bc-row bottom-row">
+                  <div className="price-tag">
+                    {booking.finalPrice ? `₹${booking.finalPrice.toLocaleString()}` : '-'}
+                  </div>
+                  <div
+                    className="status-tag"
+                    style={{ color: style.color, backgroundColor: style.bg }}
+                  >
+                    {formatEnum(booking.status)}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
       {/* 3. Action / Status Card */}
       {showRequestBooking && (
         <div className="detail-card action-card">
-          {!booking && <p className="empty-text">No bookings for this date yet.</p>}
+          {bookings.length === 0 && <p className="empty-text">No bookings for this date yet.</p>}
           <Button
             variant="primary"
             onClick={() => onDirectBooking(selectedDate)}
@@ -152,7 +167,24 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
           border: 1px solid #f1f5f9;
           box-shadow: 0 1px 3px rgba(0,0,0,0.03);
           padding: 0.75rem;
-          overflow: hidden;
+          margin-bottom: 0.75rem;
+        }
+
+        .bookings-list-container {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          max-height: 400px;
+          overflow-y: auto;
+          padding-right: 4px;
+        }
+
+        .bookings-list-container::-webkit-scrollbar {
+          width: 4px;
+        }
+        .bookings-list-container::-webkit-scrollbar-thumb {
+          background: #e2e8f0;
+          border-radius: 10px;
         }
 
         .header-card {
@@ -195,6 +227,11 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
            transition: transform 0.1s ease-in-out;
         }
         
+        .booking-card.selected-card {
+           border: 2px solid #2563eb;
+           background: #f0f7ff;
+        }
+        
         .booking-card:hover {
            transform: translateY(-1px);
            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -212,6 +249,20 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
           color: #0f172a;
           margin: 0;
           letter-spacing: -0.01em;
+        }
+
+        .top-row.clickable-header {
+          cursor: pointer;
+          padding: 4px;
+          margin: -4px;
+          border-radius: 6px;
+          transition: background-color 0.2s;
+        }
+        .top-row.clickable-header:hover {
+          background-color: #f8fafc;
+        }
+        .top-row.clickable-header:hover .view-btn {
+          background: #eff6ff;
         }
 
         .view-btn {

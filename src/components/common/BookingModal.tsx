@@ -14,6 +14,7 @@ interface BookingModalProps {
     initialData?: Partial<BookingRequest>;
     mode: 'CUSTOMER' | 'OWNER';
     hallId: string;
+    readOnly?: boolean;
 }
 
 const EVENT_TYPE_LABELS: Record<EventType, string> = {
@@ -33,12 +34,15 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     onSuccess,
     initialData,
     mode,
-    hallId
+    hallId,
+    readOnly = false
 }) => {
     const today = format(new Date(), 'yyyy-MM-dd');
     const [loading, setLoading] = useState(false);
     const [hall, setHall] = useState<Hall | null>(null);
     const [availability, setAvailability] = useState<DayAvailabilityResponse[]>([]);
+    const [isEditing, setIsEditing] = useState(!readOnly);
+
     const [formData, setFormData] = useState<Partial<BookingRequest>>({
         hallId,
         eventType: 'WEDDING',
@@ -49,6 +53,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = 'hidden';
+            setIsEditing(!readOnly); // Reset editing state based on readOnly prop
+
             // Normalize initial startDate if it's in the past
             const finalInitialData = { ...initialData };
             if (finalInitialData.startDate && finalInitialData.startDate < today) {
@@ -65,12 +71,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             fetchData();
         } else {
             document.body.style.overflow = 'unset';
+            setIsEditing(!readOnly);
         }
 
         return () => {
             document.body.style.overflow = 'unset';
         };
-    }, [isOpen, initialData, hallId, mode, today]);
+    }, [isOpen, initialData, hallId, mode, today, readOnly]);
 
     const fetchData = async () => {
         try {
@@ -115,7 +122,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 return;
             }
 
-            // Date availability validation
+            // Date availability validation - ONLY check if date changed or new booking
+            // If editing existing booking and date hasn't changed, skip this check might be needed logic, 
+            // but here we simplify assuming if they edit, they might change dates. 
+            // Ideally we should check if date is same as initialData.
             if (formData.startDate) {
                 if (formData.startDate < today) {
                     toast.error('Cannot select a past date');
@@ -123,14 +133,17 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     return;
                 }
 
-                const isUnavailable = availability.some(d =>
-                    d.date === formData.startDate &&
-                    (d.status === 'BLOCKED' || d.status === 'CONFRIMED' || d.status === 'IN_PROGRESS')
-                );
-                if (isUnavailable) {
-                    toast.error('Selected date is not available');
-                    setLoading(false);
-                    return;
+                // If date changed from initial, check availability
+                if (formData.startDate !== initialData?.startDate) {
+                    const isUnavailable = availability.some(d =>
+                        d.date === formData.startDate &&
+                        (d.status === 'BLOCKED' || d.status === 'CONFRIMED' || d.status === 'IN_PROGRESS')
+                    );
+                    if (isUnavailable) {
+                        toast.error('Selected date is not available');
+                        setLoading(false);
+                        return;
+                    }
                 }
             }
 
@@ -160,12 +173,12 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             };
 
             await bookingService.requestBooking(request);
-            toast.success('Booking created successfully!');
+            toast.success('Booking saved successfully!');
             onSuccess();
             onClose();
         } catch (error: any) {
             console.error('Booking failed:', error);
-            toast.error(error.response?.data?.message || 'Failed to create booking');
+            toast.error(error.response?.data?.message || 'Failed to save booking');
         } finally {
             setLoading(false);
         }
@@ -179,7 +192,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         <div className="modal-overlay">
             <div className="modal-container">
                 <div className="modal-header">
-                    <h2>{mode === 'OWNER' ? 'Add Booking' : 'Request Booking'}</h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <h2>
+                            {mode === 'OWNER'
+                                ? (initialData?.startDate ? (isEditing ? 'Edit Booking' : 'Booking Details') : 'Add Booking')
+                                : 'Request Booking'}
+                        </h2>
+                    </div>
                     <button onClick={onClose} className="close-btn" aria-label="Close">
                         <X size={20} />
                     </button>
@@ -197,6 +216,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                                     onChange={e => handleChange('customerName', e.target.value)}
                                     placeholder="Enter full name"
                                     required
+                                    disabled={!isEditing}
                                 />
                             </div>
 
@@ -209,6 +229,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                                     placeholder="9876543210"
                                     required
                                     maxLength={10}
+                                    disabled={!isEditing}
                                 />
                             </div>
 
@@ -218,6 +239,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                                 <select
                                     value={formData.eventType}
                                     onChange={e => handleChange('eventType', e.target.value)}
+                                    disabled={!isEditing}
                                 >
                                     {EVENT_TYPES.map(type => (
                                         <option key={type} value={type}>{EVENT_TYPE_LABELS[type]}</option>
@@ -242,6 +264,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                                     min={1}
                                     max={hall?.capacity}
                                     required
+                                    disabled={!isEditing}
                                 />
                             </div>
 
@@ -273,6 +296,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                                     }}
                                     min={today}
                                     required
+                                    disabled={!isEditing}
                                 />
                             </div>
 
@@ -283,6 +307,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                                     value={formData.endDate || ''}
                                     onChange={e => handleChange('endDate', e.target.value)}
                                     min={formData.startDate}
+                                    disabled={!isEditing}
                                 />
                             </div>
 
@@ -294,6 +319,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                                     value={formData.finalPrice || ''}
                                     onChange={e => handleChange('finalPrice', e.target.value)}
                                     placeholder="0.00"
+                                    disabled={!isEditing}
                                 />
                             </div>
                         </div>
@@ -302,43 +328,52 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                         <div className="form-group full-width">
                             <label><FileText size={14} /> Special Requirements</label>
                             <div className="requirements-input-container">
-                                <input
-                                    type="text"
-                                    placeholder="Add a requirement and press Enter"
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            const value = (e.target as HTMLInputElement).value.trim();
-                                            if (value) {
-                                                const currentReqs = formData.requirements || [];
-                                                if (!currentReqs.includes(value)) {
-                                                    setFormData(prev => ({
-                                                        ...prev,
-                                                        requirements: [...currentReqs, value]
-                                                    }));
+                                {isEditing && (
+                                    <input
+                                        type="text"
+                                        placeholder="Add a requirement and press Enter"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                const value = (e.target as HTMLInputElement).value.trim();
+                                                if (value) {
+                                                    const currentReqs = formData.requirements || [];
+                                                    if (!currentReqs.includes(value)) {
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            requirements: [...currentReqs, value]
+                                                        }));
+                                                    }
+                                                    (e.target as HTMLInputElement).value = '';
                                                 }
-                                                (e.target as HTMLInputElement).value = '';
                                             }
-                                        }
-                                    }}
-                                />
+                                        }}
+                                        disabled={!isEditing}
+                                    />
+                                )}
                                 <div className="requirements-list">
-                                    {(formData.requirements || []).map((req, index) => (
-                                        <div key={index} className="requirement-tag">
-                                            <span>{req}</span>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setFormData(prev => ({
-                                                        ...prev,
-                                                        requirements: (prev.requirements || []).filter((_, i) => i !== index)
-                                                    }));
-                                                }}
-                                            >
-                                                <X size={12} />
-                                            </button>
-                                        </div>
-                                    ))}
+                                    {(formData.requirements || []).length > 0 ? (
+                                        (formData.requirements || []).map((req, index) => (
+                                            <div key={index} className="requirement-tag">
+                                                <span>{req}</span>
+                                                {isEditing && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setFormData(prev => ({
+                                                                ...prev,
+                                                                requirements: (prev.requirements || []).filter((_, i) => i !== index)
+                                                            }));
+                                                        }}
+                                                    >
+                                                        <X size={12} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))
+                                    ) : (
+                                        !isEditing && <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>No special requirements</span>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -350,16 +385,31 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                                 value={mode === 'OWNER' ? formData.ownerNote : formData.customerNote || ''}
                                 onChange={e => handleChange(mode === 'OWNER' ? 'ownerNote' : 'customerNote', e.target.value)}
                                 rows={3}
-                                placeholder="Any additional details..."
+                                placeholder={isEditing ? "Any additional details..." : "No notes provided"}
+                                disabled={!isEditing}
                             />
                         </div>
                     </div>
 
                     <div className="modal-footer">
-                        <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
-                        <button type="submit" disabled={loading} className="btn-primary">
-                            {loading ? 'Processing...' : (mode === 'OWNER' ? 'Create Booking' : 'Send Request')}
+                        <button type="button" onClick={onClose} className="btn-secondary">
+                            {isEditing ? 'Cancel' : 'Close'}
                         </button>
+                        {!isEditing && readOnly && (
+                            <button
+                                type="button"
+                                onClick={() => setIsEditing(true)}
+                                className="btn-primary"
+                                style={{ background: '#2563eb' }}
+                            >
+                                Edit
+                            </button>
+                        )}
+                        {isEditing && (
+                            <button type="submit" disabled={loading} className="btn-primary">
+                                {loading ? 'Processing...' : (mode === 'OWNER' ? 'Save Booking' : 'Send Request')}
+                            </button>
+                        )}
                     </div>
                 </form>
             </div >
@@ -405,6 +455,21 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     font-size: 1.25rem;
                     color: #1e293b;
                     font-weight: 700;
+                }
+                .edit-mode-btn {
+                    padding: 0.25rem 0.75rem;
+                    background: #eff6ff;
+                    color: #2563eb;
+                    border: 1px solid #dbeafe;
+                    border-radius: 6px;
+                    font-size: 0.8rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+                .edit-mode-btn:hover {
+                    background: #dbeafe;
+                    border-color: #2563eb;
                 }
                 .close-btn {
                     background: transparent;
@@ -465,11 +530,18 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     font-family: inherit;
                     width: 100%;
                 }
+                .form-group input:disabled, .form-group select:disabled, .form-group textarea:disabled {
+                    background: #f8fafc;
+                    color: #64748b;
+                    cursor: not-allowed;
+                    border-color: #f1f5f9;
+                }
                 .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
                     outline: none;
                     border-color: #3b82f6;
                     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
                 }
+                /* ... rest of styles ... */
                 .status-options {
                     display: flex;
                     gap: 0.5rem;
