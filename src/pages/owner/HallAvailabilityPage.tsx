@@ -227,6 +227,7 @@ export const HallAvailabilityPage: React.FC = () => {
           <DayDetailsPanel
             selectedDate={selectedDate}
             status={currentStatus}
+            note={selectedDayData?.note}
             booking={selectedBooking || selectedDayData?.booking}
             onDirectBooking={handleDirectBooking}
             onEditBooking={handleEditBooking}
@@ -368,6 +369,12 @@ export const HallAvailabilityPage: React.FC = () => {
           grid-template-columns: 1.5fr 1fr;
           gap: 1rem;
           align-items: start;
+        }
+
+        .details-section {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
         }
 
         .card {
