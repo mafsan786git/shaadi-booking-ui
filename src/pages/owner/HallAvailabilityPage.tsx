@@ -245,26 +245,6 @@ export const HallAvailabilityPage: React.FC = () => {
             onEditBooking={handleEditBooking}
           />
 
-          <div className="availability-legend card">
-            <div className="legend-item">
-              <div className="legend-color available"></div>
-              <span>Available</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-color booked"></div>
-              <span>Booked</span>
-            </div>
-
-
-            <div className="legend-item">
-              <div className="legend-color pending"></div>
-              <span>In Progress</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-color blocked"></div>
-              <span>Blocked</span>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -402,34 +382,6 @@ export const HallAvailabilityPage: React.FC = () => {
           padding: 0.75rem;
           position: relative;
         }
-
-        .availability-legend {
-          margin-top: 1rem;
-          padding: 0.75rem 1rem;
-          display: flex;
-          justify-content: space-between;
-          gap: 0.5rem;
-          flex-wrap: wrap;
-        }
-
-        .legend-item {
-          display: flex;
-          align-items: center;
-          gap: 0.4rem;
-          font-size: 0.7rem;
-          font-weight: 500;
-          color: #64748b;
-        }
-
-        .legend-color {
-          width: 10px;
-          height: 10px;
-          border-radius: 3px;
-        }
-        .legend-color.available { background: #f0fdf4; border: 1px solid #dcfce7; }
-        .legend-color.booked { background: #fef2f2; border: 1px solid #fee2e2; }
-        .legend-color.pending { background: #fff7ed; border: 1px solid #ffedd5; }
-        .legend-color.blocked { background: #f8fafc; border: 1px solid #f1f5f9; }
 
         .loading-overlay {
           position: absolute;

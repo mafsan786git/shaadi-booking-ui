@@ -86,7 +86,13 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
             const style = getBookingStatusStyle(booking.status);
 
             return (
-              <div key={booking.id} className={`detail-card booking-card ${isSelected ? 'selected-card' : ''}`}>
+              <div
+                key={booking.id}
+                className={`detail-card booking-card ${isSelected ? 'selected-card' : ''}`}
+                style={{
+                  borderColor: style.color
+                }}
+              >
                 {/* Top Row: Name & View - Clickable */}
                 <div
                   className="bc-row top-row clickable-header"
@@ -228,8 +234,7 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
         }
         
         .booking-card.selected-card {
-           border: 2px solid #2563eb;
-           background: #f0f7ff;
+           background: #ffffff;
         }
         
         .booking-card:hover {
@@ -360,7 +365,7 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
         .direct-booking-btn {
           width: 100%;
           font-size: 0.9rem;
-          padding: 0.5rem;
+          padding: 0.35rem 0.5rem;
         }
       `}</style>
     </>
