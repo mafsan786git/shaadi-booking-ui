@@ -14,7 +14,6 @@ import {
   isSameMonth,
   addMonths,
   subMonths,
-  isWithinInterval
 } from 'date-fns';
 import type { Hall, BookingRequest, Booking } from '../../types';
 import { toast } from 'react-hot-toast';

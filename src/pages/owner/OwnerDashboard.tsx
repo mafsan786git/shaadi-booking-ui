@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useHallStore } from '../../context/useHallStore';
 import type { Hall } from '../../types';
 import { toast } from 'react-hot-toast';
-import { Plus, Trash, MapPin, Users, ListOrdered } from 'lucide-react';
+import { Plus, MapPin, Users, ListOrdered } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { CreateHallModal } from '../../components/owner/CreateHallModal';
 
@@ -11,6 +11,7 @@ export const OwnerDashboard = () => {
     const { halls, isLoading, fetchHalls, updateHallStatus, setSelectedHallId } = useHallStore();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [hallToEdit, setHallToEdit] = useState<Hall | null>(null);
+    const [isViewMode, setIsViewMode] = useState(false);
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
 
@@ -21,6 +22,7 @@ export const OwnerDashboard = () => {
 
     const handleCreateNew = () => {
         setHallToEdit(null);
+        setIsViewMode(false);
         setIsCreateModalOpen(true);
     };
 
@@ -34,16 +36,7 @@ export const OwnerDashboard = () => {
         }
     };
 
-    const handleDelete = async (hallId: string) => {
-        if (!window.confirm('Are you sure you want to delete this hall?')) return;
 
-        try {
-            await updateHallStatus(hallId, 'DELETED');
-            toast.success('Hall deleted successfully');
-        } catch (error) {
-            // Error handled in store
-        }
-    };
 
     // Only show full-page loading if it's the very first load and we're currently fetching
     if (isLoading && halls.length === 0) return (
@@ -73,6 +66,7 @@ export const OwnerDashboard = () => {
                 onClose={() => setIsCreateModalOpen(false)}
                 onSuccess={() => fetchHalls(true)}
                 hallToEdit={hallToEdit}
+                initialViewMode={isViewMode}
             />
 
             {activeHalls.length === 0 ? (
@@ -94,14 +88,16 @@ export const OwnerDashboard = () => {
                                         </span>
                                     </div>
                                     <button
-                                        className="delete-icon-btn"
+                                        className="view-icon-btn"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            handleDelete(hall.hallId);
+                                            setHallToEdit(hall);
+                                            setIsViewMode(true);
+                                            setIsCreateModalOpen(true);
                                         }}
-                                        title="Delete Hall"
+                                        title="View Details"
                                     >
-                                        <Trash size={20} />
+                                        View
                                     </button>
                                 </div>
 
@@ -136,18 +132,19 @@ export const OwnerDashboard = () => {
                                 <Button
                                     variant="primary"
                                     onClick={() => {
-                                        setHallToEdit(hall);
-                                        setIsCreateModalOpen(true);
+                                        setSelectedHallId(hall.hallId);
+                                        navigate(`/hall/availability`);
                                     }}
                                     className="action-btn"
                                 >
-                                    Edit
+                                    Request Booking
                                 </Button>
                             </div>
                         </div>
                     ))}
                 </div>
-            )}
+            )
+            }
 
             <style>{`
                 .dashboard-header {
@@ -198,24 +195,29 @@ export const OwnerDashboard = () => {
                 .status-badge.active { background: #dcfce7; color: #166534; }
                 .status-badge.inactive { background: #f3f4f6; color: #374151; }
                 
-                .delete-icon-btn {
+                
+                .view-icon-btn {
                     background: none;
-                    border: none;
-                    color: #ef4444;
+                    border: 1px solid #e5e7eb;
+                    color: #4b5563;
                     cursor: pointer;
-                    padding: 0.25rem;
-                    border-radius: 50%;
-                    transition: background 0.2s;
+                    padding: 0.25rem 0.75rem;
+                    border-radius: 6px;
+                    transition: all 0.2s;
                     display: flex;
                     align-items: center;
                     justify-content: center;
+                    font-size: 0.85rem;
+                    font-weight: 500;
                 }
-                .delete-icon-btn:hover {
-                    background: #fee2e2;
+                .view-icon-btn:hover {
+                    background: #f3f4f6;
+                    color: #111827;
+                    border-color: #d1d5db;
                 }
                 
                 .card-content {
-                    padding: 0.5rem 1.5rem 1.5rem 1.5rem;
+                    padding: 0.5rem 1rem 0.5rem 1rem;
                     flex-grow: 1;
                 }
                 
@@ -255,13 +257,13 @@ export const OwnerDashboard = () => {
                 .card-bottom-row {
                     display: flex;
                     justify-content: space-between;
-                    padding: 1rem;
+                    padding: 0.75rem;
                     background: #f9fafb;
                     border-top: 1px solid #f3f4f6;
                     gap: 1rem;
                 }
                 .action-btn {
-                    padding: 0.4rem 1rem;
+                    padding: 0.3rem 0.75rem;
                     font-size: 0.9rem;
                 }
                 .card-clickable-area {
@@ -274,6 +276,6 @@ export const OwnerDashboard = () => {
                     color: #2563eb;
                 }
             `}</style>
-        </div>
+        </div >
     );
 };
