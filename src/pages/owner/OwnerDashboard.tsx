@@ -123,9 +123,9 @@ export const OwnerDashboard = () => {
 
                             <div className="card-bottom-row">
                                 <Button
-                                    variant={hall.status === 'ACTIVE' ? 'outline' : 'success'}
+                                    variant="outline"
                                     onClick={() => handleStatusChange(hall.hallId, hall.status || 'INACTIVE')}
-                                    className="action-btn"
+                                    className={`action-btn ${hall.status === 'ACTIVE' ? 'btn-deactivate' : 'btn-activate'}`}
                                 >
                                     {hall.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
                                 </Button>
@@ -193,13 +193,13 @@ export const OwnerDashboard = () => {
                     letter-spacing: 0.05em;
                 }
                 .status-badge.active { background: #dcfce7; color: #166534; }
-                .status-badge.inactive { background: #f3f4f6; color: #374151; }
+                .status-badge.inactive { background: #fee2e2; color: #dc2626; }
                 
                 
                 .view-icon-btn {
-                    background: none;
-                    border: 1px solid #e5e7eb;
-                    color: #4b5563;
+                    background: white;
+                    border: 1px solid #3b82f6;
+                    color: #2563eb;
                     cursor: pointer;
                     padding: 0.25rem 0.75rem;
                     border-radius: 6px;
@@ -265,6 +265,22 @@ export const OwnerDashboard = () => {
                 .action-btn {
                     padding: 0.3rem 0.75rem;
                     font-size: 0.9rem;
+                }
+                .btn-deactivate {
+                    border-color: #fecaca !important;
+                    color: #ef4444 !important;
+                    background: white !important;
+                }
+                .btn-deactivate:hover {
+                    background: #fee2e2 !important;
+                }
+                .btn-activate {
+                    border-color: #86efac !important;
+                    color: #16a34a !important;
+                    background: white !important;
+                }
+                .btn-activate:hover {
+                    background: #dcfce7 !important;
                 }
                 .card-clickable-area {
                     cursor: pointer;

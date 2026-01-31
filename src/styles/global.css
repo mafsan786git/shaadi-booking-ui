@@ -13,7 +13,7 @@
   /* Slate 50 */
   --color-surface: #FFFFFF;
   --color-border: #E2E8F0;
-  --color-success: #10B981;
+  --color-success: #22c55e;
   --color-error: #EF4444;
 
   /* Typography */
@@ -138,5 +138,5 @@ ol {
 }
 
 .btn-success:hover {
-  background-color: #059669;
+  background-color: #16a34a;
 }
