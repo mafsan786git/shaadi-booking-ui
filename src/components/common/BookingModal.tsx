@@ -435,10 +435,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     width: 95%;
                     max-width: 600px;
                     max-height: 90vh;
-                    display: flex;
-                    flex-direction: column;
+                    display: grid;
+                    grid-template-rows: auto 1fr auto;
                     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
                     animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                    overflow: hidden;
                 }
                 .modal-header {
                     padding: 1.25rem 1.5rem;
@@ -486,15 +487,15 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     color: #0f172a;
                 }
                 .modal-form {
-                    display: flex;
-                    flex-direction: column;
-                    flex: 1;
+                    display: grid;
+                    grid-template-rows: 1fr auto;
+                    min-height: 0;
                     overflow: hidden;
                 }
                 .modal-body {
                     padding: 1.5rem;
                     overflow-y: auto;
-                    flex: 1;
+                    min-height: 0;
                     overscroll-behavior: contain;
                     /* Smooth scrolling */
                     -webkit-overflow-scrolling: touch;
@@ -619,30 +620,32 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     .form-grid {
                         grid-template-columns: 1fr;
                     }
+                    .modal-overlay {
+                        align-items: flex-end;
+                    }
                     .modal-container {
-                        width: 100%;
-                        height: 90vh; /* Fixed height ratio for consistency */
-                        max-height: 90vh;
+                        width: 100vw;
+                        height: 92vh; 
+                        max-height: 92vh;
                         border-radius: 20px 20px 0 0;
                         margin-top: auto;
-                        animation: slideUp 0.3s ease-out;
+                        grid-template-rows: auto 1fr;
                     }
                     .modal-form {
-                        height: calc(90vh - 65px); /* Header height approx 65px */
+                        grid-template-rows: 1fr auto;
+                        height: 100%;
                     }
                     .modal-header {
                         padding: 1rem 1.25rem;
                     }
                     .modal-body {
-                        padding: 1.25rem;
+                        padding: 1.25rem 1.25rem 4rem 1.25rem;
                     }
                     .modal-footer {
                         padding: 1rem 1.25rem;
-                        background: white;
-                        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
-                        position: sticky;
-                        bottom: 0;
-                        z-index: 10;
+                        background: #f8fafc;
+                        border-top: 1px solid #e2e8f0;
+                        margin-top: auto;
                     }
                     .btn-primary, .btn-secondary {
                         flex: 1;

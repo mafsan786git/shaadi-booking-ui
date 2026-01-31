@@ -38,6 +38,7 @@ export const CreateHallModal = ({ isOpen, onClose, onSuccess, hallToEdit, initia
 
     useEffect(() => {
         if (isOpen) {
+            document.body.style.overflow = 'hidden';
             setIsViewMode(!!initialViewMode);
             if (hallToEdit) {
                 setFormData({
@@ -54,7 +55,12 @@ export const CreateHallModal = ({ isOpen, onClose, onSuccess, hallToEdit, initia
             } else {
                 setFormData(initialFormState);
             }
+        } else {
+            document.body.style.overflow = 'unset';
         }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
     }, [isOpen, hallToEdit, initialViewMode]);
 
     if (!isOpen) return null;
@@ -146,171 +152,173 @@ export const CreateHallModal = ({ isOpen, onClose, onSuccess, hallToEdit, initia
                 </div>
 
                 <form onSubmit={handleSubmit} className="modal-form">
-                    <fieldset disabled={isViewMode} style={{ border: 'none', padding: 0, margin: 0 }}>
-                        <div className="form-group">
-                            <label>Hall Name <span className="required">*</span></label>
-                            <input
-                                type="text"
-                                required
-                                value={formData.name}
-                                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                placeholder="e.g. Grand Palace"
-                            />
-                        </div>
-
-                        <div className="form-row">
+                    <div className="modal-body">
+                        <fieldset disabled={isViewMode} style={{ border: 'none', padding: 0, margin: 0 }}>
                             <div className="form-group">
-                                <label>Capacity <span className="required">*</span></label>
-                                <input
-                                    type="number"
-                                    required
-                                    min="1"
-                                    value={!formData.capacity ? '' : formData.capacity}
-                                    onChange={e => {
-                                        const val = parseInt(e.target.value);
-                                        setFormData({ ...formData, capacity: isNaN(val) ? 0 : val });
-                                    }}
-                                    onKeyDown={e => ["e", "E", "+", "-", "."].includes(e.key) && e.preventDefault()}
-                                    placeholder="e.g. 500"
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>Base Price <span className="required">*</span></label>
-                                <input
-                                    type="number"
-                                    required
-                                    min="0"
-                                    value={!formData.basePrice ? '' : formData.basePrice}
-                                    onChange={e => {
-                                        const val = parseInt(e.target.value);
-                                        setFormData({ ...formData, basePrice: isNaN(val) ? 0 : val });
-                                    }}
-                                    onKeyDown={e => ["e", "E", "+", "-", "."].includes(e.key) && e.preventDefault()}
-                                    placeholder="e.g. 50000"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="form-section">
-                            <h4>Address</h4>
-                            <div className="form-group">
-                                <label>Street Address <span className="required">*</span></label>
+                                <label>Hall Name <span className="required">*</span></label>
                                 <input
                                     type="text"
                                     required
-                                    value={formData.address.address}
-                                    onChange={e => setFormData({
-                                        ...formData,
-                                        address: { ...formData.address, address: e.target.value }
-                                    })}
-                                    placeholder="e.g. 123 Main St, Near Park"
+                                    value={formData.name}
+                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                    placeholder="e.g. Grand Palace"
                                 />
                             </div>
+
                             <div className="form-row">
                                 <div className="form-group">
-                                    <label>City <span className="required">*</span></label>
+                                    <label>Capacity <span className="required">*</span></label>
                                     <input
-                                        type="text"
+                                        type="number"
                                         required
-                                        value={formData.address.city}
-                                        onChange={e => setFormData({
-                                            ...formData,
-                                            address: { ...formData.address, city: e.target.value }
-                                        })}
-                                        placeholder="e.g. Prayagraj"
+                                        min="1"
+                                        value={!formData.capacity ? '' : formData.capacity}
+                                        onChange={e => {
+                                            const val = parseInt(e.target.value);
+                                            setFormData({ ...formData, capacity: isNaN(val) ? 0 : val });
+                                        }}
+                                        onKeyDown={e => ["e", "E", "+", "-", "."].includes(e.key) && e.preventDefault()}
+                                        placeholder="e.g. 500"
                                     />
                                 </div>
                                 <div className="form-group">
-                                    <label>State <span className="required">*</span></label>
+                                    <label>Base Price <span className="required">*</span></label>
                                     <input
-                                        type="text"
+                                        type="number"
                                         required
-                                        value={formData.address.state}
-                                        onChange={e => setFormData({
-                                            ...formData,
-                                            address: { ...formData.address, state: e.target.value }
-                                        })}
-                                        placeholder="e.g. Uttar Pradesh"
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label>Zipcode <span className="required">*</span></label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={formData.address.zipcode}
-                                        onChange={e => setFormData({
-                                            ...formData,
-                                            address: { ...formData.address, zipcode: e.target.value }
-                                        })}
-                                        placeholder="e.g. 210002"
+                                        min="0"
+                                        value={!formData.basePrice ? '' : formData.basePrice}
+                                        onChange={e => {
+                                            const val = parseInt(e.target.value);
+                                            setFormData({ ...formData, basePrice: isNaN(val) ? 0 : val });
+                                        }}
+                                        onKeyDown={e => ["e", "E", "+", "-", "."].includes(e.key) && e.preventDefault()}
+                                        placeholder="e.g. 50000"
                                     />
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="form-group">
-                            <label>Description</label>
-                            <textarea
-                                value={formData.description}
-                                onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                rows={3}
-                                placeholder="Describe the hall features, ambiance, and suitability for events..."
-                            />
-                        </div>
-
-                        <div className="form-section">
-                            <label>Facilities</label>
-                            {!isViewMode && (
-                                <div className="input-with-button">
+                            <div className="form-section">
+                                <h4>Address</h4>
+                                <div className="form-group">
+                                    <label>Street Address <span className="required">*</span></label>
                                     <input
                                         type="text"
-                                        value={newFacility}
-                                        onChange={e => setNewFacility(e.target.value)}
-                                        placeholder="Add facility (e.g. WiFi, AC)"
-                                        onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addFacility())}
+                                        required
+                                        value={formData.address.address}
+                                        onChange={e => setFormData({
+                                            ...formData,
+                                            address: { ...formData.address, address: e.target.value }
+                                        })}
+                                        placeholder="e.g. 123 Main St, Near Park"
                                     />
-                                    <button type="button" onClick={addFacility} className="add-btn">Add</button>
                                 </div>
-                            )}
-                            <div className="tags-container">
-                                {formData.facilities.map((facility, index) => (
-                                    <span key={index} className="tag">
-                                        {facility}
-                                        {!isViewMode && <button type="button" onClick={() => removeFacility(index)}><X size={14} /></button>}
-                                    </span>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>City <span className="required">*</span></label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={formData.address.city}
+                                            onChange={e => setFormData({
+                                                ...formData,
+                                                address: { ...formData.address, city: e.target.value }
+                                            })}
+                                            placeholder="e.g. Prayagraj"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>State <span className="required">*</span></label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={formData.address.state}
+                                            onChange={e => setFormData({
+                                                ...formData,
+                                                address: { ...formData.address, state: e.target.value }
+                                            })}
+                                            placeholder="e.g. Uttar Pradesh"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Zipcode <span className="required">*</span></label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={formData.address.zipcode}
+                                            onChange={e => setFormData({
+                                                ...formData,
+                                                address: { ...formData.address, zipcode: e.target.value }
+                                            })}
+                                            placeholder="e.g. 210002"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="form-group">
+                                <label>Description</label>
+                                <textarea
+                                    value={formData.description}
+                                    onChange={e => setFormData({ ...formData, description: e.target.value })}
+                                    rows={3}
+                                    placeholder="Describe the hall features, ambiance, and suitability for events..."
+                                />
+                            </div>
+
+                            <div className="form-section">
+                                <label>Facilities</label>
+                                {!isViewMode && (
+                                    <div className="input-with-button">
+                                        <input
+                                            type="text"
+                                            value={newFacility}
+                                            onChange={e => setNewFacility(e.target.value)}
+                                            placeholder="Add facility (e.g. WiFi, AC)"
+                                            onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addFacility())}
+                                        />
+                                        <button type="button" onClick={addFacility} className="add-btn">Add</button>
+                                    </div>
+                                )}
+                                <div className="tags-container">
+                                    {formData.facilities.map((facility, index) => (
+                                        <span key={index} className="tag">
+                                            {facility}
+                                            {!isViewMode && <button type="button" onClick={() => removeFacility(index)}><X size={14} /></button>}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="form-section">
+                                <label>Contacts <span className="required">*</span></label>
+                                {!isViewMode && <p className="description-text">Enter valid 10-digit phone numbers.</p>}
+                                {formData.contacts.map((contact, index) => (
+                                    <div key={index} className="input-with-button mb-2">
+                                        <input
+                                            type="text"
+                                            value={contact}
+                                            onChange={e => handleContactChange(index, e.target.value)}
+                                            placeholder="10-digit Phone Number"
+                                            maxLength={10}
+                                            required
+                                        />
+                                        {index > 0 && !isViewMode && (
+                                            <button type="button" onClick={() => removeContact(index)} className="remove-btn">
+                                                <Trash size={18} />
+                                            </button>
+                                        )}
+                                    </div>
                                 ))}
+
+                                {!isViewMode && (
+                                    <button type="button" onClick={addContact} className="text-btn">
+                                        <Plus size={16} /> Add another contact
+                                    </button>
+                                )}
                             </div>
-                        </div>
-
-                        <div className="form-section">
-                            <label>Contacts <span className="required">*</span></label>
-                            {!isViewMode && <p className="description-text">Enter valid 10-digit phone numbers.</p>}
-                            {formData.contacts.map((contact, index) => (
-                                <div key={index} className="input-with-button mb-2">
-                                    <input
-                                        type="text"
-                                        value={contact}
-                                        onChange={e => handleContactChange(index, e.target.value)}
-                                        placeholder="10-digit Phone Number"
-                                        maxLength={10}
-                                        required
-                                    />
-                                    {index > 0 && !isViewMode && (
-                                        <button type="button" onClick={() => removeContact(index)} className="remove-btn">
-                                            <Trash size={18} />
-                                        </button>
-                                    )}
-                                </div>
-                            ))}
-
-                            {!isViewMode && (
-                                <button type="button" onClick={addContact} className="text-btn">
-                                    <Plus size={16} /> Add another contact
-                                </button>
-                            )}
-                        </div>
-                    </fieldset>
+                        </fieldset>
+                    </div>
 
                     <div className="modal-footer">
                         {isViewMode ? (
@@ -337,7 +345,7 @@ export const CreateHallModal = ({ isOpen, onClose, onSuccess, hallToEdit, initia
                         )}
                     </div>
                 </form>
-            </div >
+            </div>
 
             <style>{`
                 .modal-overlay {
@@ -355,20 +363,22 @@ export const CreateHallModal = ({ isOpen, onClose, onSuccess, hallToEdit, initia
                 }
                 .modal-content {
                     background: white;
-                    border-radius: 8px;
-                    width: 100%;
+                    border-radius: 12px;
+                    width: 95%;
                     max-width: 600px;
                     max-height: 90vh;
-                    overflow-y: auto;
+                    display: grid;
+                    grid-template-rows: auto 1fr auto;
+                    overflow: hidden;
+                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+                    animation: slideUp 0.3s ease-out;
                 }
                 .modal-header {
-                    padding: 1.5rem;
-                    border-bottom: 1px solid #eee;
+                    padding: 1.25rem 1.5rem;
+                    border-bottom: 1px solid #e2e8f0;
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    position: sticky;
-                    top: 0;
                     background: white;
                     z-index: 10;
                 }
@@ -401,7 +411,17 @@ export const CreateHallModal = ({ isOpen, onClose, onSuccess, hallToEdit, initia
                     color: #666;
                 }
                 .modal-form {
-                    padding: 0.5rem 1rem;
+                    display: grid;
+                    grid-template-rows: 1fr auto;
+                    min-height: 0;
+                    overflow: hidden;
+                }
+                .modal-body {
+                    padding: 1.5rem;
+                    overflow-y: auto;
+                    min-height: 0;
+                    -webkit-overflow-scrolling: touch;
+                    overscroll-behavior: contain;
                 }
                 .form-section {
                     margin-bottom: 0.5rem;
@@ -534,14 +554,46 @@ export const CreateHallModal = ({ isOpen, onClose, onSuccess, hallToEdit, initia
                     gap: 0.5rem;
                 }
                 .modal-footer {
-                    margin-top: 1rem;
                     display: flex;
                     justify-content: space-between;
                     gap: 1rem;
-                    padding: 1rem 1.25rem;
-                    border-top: 1px solid #eee;
+                    padding: 1.25rem 1.5rem;
+                    border-top: 1px solid #e2e8f0;
                     background: #f8fafc;
-                    border-radius: 0 0 16px 16px;
+                    flex-shrink: 0;
+                }
+                @media (max-width: 600px) {
+                    .modal-overlay {
+                        padding: 0;
+                        align-items: flex-end;
+                    }
+                    .modal-content {
+                        width: 100vw;
+                        height: 92vh;
+                        max-height: 92vh;
+                        border-radius: 16px 16px 0 0;
+                        grid-template-rows: auto 1fr; /* Form itself handles body/footer */
+                    }
+                    .modal-form {
+                        grid-template-rows: 1fr auto;
+                        height: 100%;
+                    }
+                    .modal-header {
+                        padding: 1rem 1.25rem;
+                    }
+                    .modal-body {
+                        padding: 1.25rem 1.25rem 4rem 1.25rem; /* Increased bottom padding */
+                    }
+                    .modal-footer {
+                        padding: 1rem 1.25rem;
+                        background: #f8fafc;
+                        border-top: 1px solid #e2e8f0;
+                        box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+                    }
+                }
+                @keyframes slideUp {
+                    from { transform: translateY(100%); }
+                    to { transform: translateY(0); }
                 }
                 .mb-2 { margin-bottom: 0.5rem; }
                 .remove-btn {
