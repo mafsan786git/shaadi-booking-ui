@@ -77,10 +77,7 @@ export const OwnerDashboard = () => {
                 <div className="hall-grid">
                     {activeHalls.map(hall => (
                         <div key={hall.hallId} className="hall-card">
-                            <div className="card-clickable-area" onClick={() => {
-                                setSelectedHallId(hall.hallId);
-                                navigate(`/hall/availability`);
-                            }}>
+                            <div className="card-info-area">
                                 <div className="card-top-row">
                                     <div className="status-container">
                                         <span className={`status-badge ${hall.status?.toLowerCase() || 'inactive'}`}>
@@ -136,6 +133,8 @@ export const OwnerDashboard = () => {
                                         navigate(`/hall/availability`);
                                     }}
                                     className="action-btn"
+                                    disabled={hall.status !== 'ACTIVE'}
+                                    title={hall.status !== 'ACTIVE' ? "Activate hall to request bookings" : ""}
                                 >
                                     Request Booking
                                 </Button>
@@ -282,14 +281,10 @@ export const OwnerDashboard = () => {
                 .btn-activate:hover {
                     background: #dcfce7 !important;
                 }
-                .card-clickable-area {
-                    cursor: pointer;
+                .card-info-area {
                     flex-grow: 1;
                     display: flex;
                     flex-direction: column;
-                }
-                .card-clickable-area:hover .hall-name {
-                    color: #2563eb;
                 }
             `}</style>
         </div >
