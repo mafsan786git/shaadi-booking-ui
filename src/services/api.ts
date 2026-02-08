@@ -41,6 +41,8 @@ api.interceptors.request.use(
         const token = localStorage.getItem('accessToken');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
+        } else {
+            delete config.headers.Authorization;
         }
         return config;
     },
@@ -88,7 +90,7 @@ api.interceptors.response.use(
                     localStorage.setItem('accessToken', newAccessToken);
                     localStorage.setItem('refreshToken', newRefreshToken);
 
-                    api.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
+                    // api.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`; // REMOVED to avoid stale state
                     originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
 
                     processQueue(null, newAccessToken);

@@ -18,7 +18,10 @@ function App() {
   const logout = useAuthStore((state) => state.logout);
 
   useEffect(() => {
-    injectLogout(logout);
+    injectLogout(() => {
+      logout();
+      window.location.href = '/auth';
+    });
     checkAuth();
   }, [checkAuth, logout]);
 
