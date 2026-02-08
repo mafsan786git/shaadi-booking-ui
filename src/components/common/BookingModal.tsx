@@ -6,6 +6,7 @@ import { bookingService } from '../../services/bookingService';
 import { hallService } from '../../services/hallService';
 import type { Hall, DayAvailabilityResponse } from '../../types';
 import { format, parseISO } from 'date-fns';
+import { validateMobile, sanitizeMobileInput } from '../../utils/validation';
 
 interface BookingModalProps {
     isOpen: boolean;
@@ -109,8 +110,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             }
 
             // Phone validation
-            if (!/^[6-9]\d{9}$/.test(formData.customerPhone)) {
-                toast.error('Please enter a valid Indian mobile number');
+            if (!validateMobile(formData.customerPhone)) {
+                toast.error('Please enter a valid 10-digit mobile number (starting with 1-9)');
                 setLoading(false);
                 return;
             }
@@ -225,7 +226,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                                 <input
                                     type="tel"
                                     value={formData.customerPhone || ''}
-                                    onChange={e => handleChange('customerPhone', e.target.value)}
+                                    onChange={e => handleChange('customerPhone', sanitizeMobileInput(e.target.value))}
                                     placeholder="9876543210"
                                     required
                                     maxLength={10}

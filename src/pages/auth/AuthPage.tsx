@@ -5,6 +5,7 @@ import { authService } from '../../services/authService';
 import { useAuthStore } from '../../context/useAuthStore';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
+import { validateMobile, sanitizeMobileInput } from '../../utils/validation';
 
 export const AuthPage = () => {
     const navigate = useNavigate();
@@ -49,8 +50,8 @@ export const AuthPage = () => {
 
     const handleSendOtp = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!phone || phone.length < 10) {
-            toast.error('Please enter a valid phone number');
+        if (!validateMobile(phone)) {
+            toast.error('Please enter a valid 10-digit mobile number (starting with 1-9)');
             return;
         }
 
@@ -134,7 +135,7 @@ export const AuthPage = () => {
                             label="Phone Number"
                             placeholder="+91 98765 43210"
                             value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
+                            onChange={(e) => setPhone(sanitizeMobileInput(e.target.value))}
                             autoFocus
                         />
                         <Button type="submit" isLoading={isLoading} style={{ width: '100%' }}>

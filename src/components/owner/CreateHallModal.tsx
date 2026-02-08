@@ -4,6 +4,7 @@ import { X, Plus, Trash } from 'lucide-react';
 import type { Hall, HallRequest } from '../../types';
 import { hallService } from '../../services/hallService';
 import { toast } from 'react-hot-toast';
+import { validateMobile, sanitizeMobileInput } from '../../utils/validation';
 
 interface CreateHallModalProps {
     isOpen: boolean;
@@ -66,8 +67,7 @@ export const CreateHallModal = ({ isOpen, onClose, onSuccess, hallToEdit, initia
     if (!isOpen) return null;
 
     const validateContacts = (contacts: string[]) => {
-        const phoneRegex = /^\d{10}$/;
-        return contacts.every(contact => phoneRegex.test(contact));
+        return contacts.every(contact => validateMobile(contact));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -122,11 +122,9 @@ export const CreateHallModal = ({ isOpen, onClose, onSuccess, hallToEdit, initia
     };
 
     const handleContactChange = (index: number, value: string) => {
-        // Only allow digits
-        if (value && !/^\d*$/.test(value)) return;
-
+        const sanitized = sanitizeMobileInput(value);
         const newContacts = [...formData.contacts];
-        newContacts[index] = value;
+        newContacts[index] = sanitized;
         setFormData({ ...formData, contacts: newContacts });
     };
 
