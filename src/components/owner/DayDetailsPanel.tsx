@@ -1,5 +1,5 @@
 import React from 'react';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isBefore, startOfDay } from 'date-fns';
 import { Calendar, Info, Plus } from 'lucide-react';
 import type { Booking, AvailabilityStatus } from '../../types';
 import { Button } from '../common/Button';
@@ -26,7 +26,8 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
   // Shorter date format: "Wed, 29 Jan 2026"
   const formattedDate = format(selectedDate, 'EEE, dd MMM yyyy');
 
-  const showRequestBooking = (status === 'AVAILABLE' || status === 'IN_PROGRESS');
+  const isPast = isBefore(selectedDate, startOfDay(new Date()));
+  const showRequestBooking = (status === 'AVAILABLE' || status === 'IN_PROGRESS') && !isPast;
 
   const formatStatus = (s: AvailabilityStatus) => {
     switch (s) {

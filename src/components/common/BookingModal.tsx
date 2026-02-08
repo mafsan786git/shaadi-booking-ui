@@ -16,6 +16,7 @@ interface BookingModalProps {
     mode: 'CUSTOMER' | 'OWNER';
     hallId: string;
     readOnly?: boolean;
+    allowEdit?: boolean;
 }
 
 const EVENT_TYPE_LABELS: Record<EventType, string> = {
@@ -36,7 +37,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     initialData,
     mode,
     hallId,
-    readOnly = false
+    readOnly = false,
+    allowEdit = true
 }) => {
     const today = format(new Date(), 'yyyy-MM-dd');
     const [loading, setLoading] = useState(false);
@@ -396,7 +398,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                         <button type="button" onClick={onClose} className="btn-secondary">
                             {isEditing ? 'Cancel' : 'Close'}
                         </button>
-                        {!isEditing && readOnly && (
+                        {!isEditing && readOnly && allowEdit && (
                             <button
                                 type="button"
                                 onClick={() => setIsEditing(true)}

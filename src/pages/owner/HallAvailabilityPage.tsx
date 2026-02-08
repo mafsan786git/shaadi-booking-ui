@@ -14,6 +14,8 @@ import {
   isSameMonth,
   addMonths,
   subMonths,
+  isBefore,
+  startOfDay
 } from 'date-fns';
 import type { Hall, BookingRequest, Booking } from '../../types';
 import { toast } from 'react-hot-toast';
@@ -257,6 +259,7 @@ export const HallAvailabilityPage: React.FC = () => {
         mode="OWNER"
         hallId={selectedHallId || ''}
         readOnly={isModalReadOnly}
+        allowEdit={bookingInitialData.endDate ? !isBefore(parseISO(bookingInitialData.endDate), startOfDay(new Date())) : true}
       />
 
       <style>{`

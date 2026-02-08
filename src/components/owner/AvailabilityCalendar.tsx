@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   format,
   startOfMonth,
@@ -9,9 +9,10 @@ import {
   isSameMonth,
   isSameDay,
   addMonths,
-  subMonths
+  subMonths,
+  isBefore,
+  startOfDay
 } from 'date-fns';
-import { useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { DayAvailabilityResponse } from '../../types';
 
@@ -124,12 +125,26 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
           const isCurrentMonth = isSameMonth(date, monthStart);
           const isSelected = isSameDay(date, selectedDate);
           const isToday = isSameDay(date, new Date());
+          const isPast = isBefore(date, startOfDay(new Date()));
+
+          // Determine if the day should be clickable
+          // Past + Available = Not clickable
+          // Past + Booked = Clickable
+          // Future = Clickable
+          const isClickable = isCurrentMonth && (!isPast || status !== 'AVAILABLE');
 
           return (
             <div
               key={index}
-              className={`calendar-day ${!isCurrentMonth ? 'outside-month' : ''} ${isSelected && isCurrentMonth ? 'selected' : ''} ${isToday && isCurrentMonth ? 'today' : ''} ${isCurrentMonth ? `status-${status.toLowerCase()}` : ''}`}
-              onClick={() => isCurrentMonth && onDateSelect(date)}
+              className={`calendar-day 
+                ${!isCurrentMonth ? 'outside-month' : ''} 
+                ${isSelected && isCurrentMonth ? 'selected' : ''} 
+                ${isToday && isCurrentMonth ? 'today' : ''} 
+                ${isCurrentMonth ? `status-${status.toLowerCase()}` : ''}
+                ${isPast && isCurrentMonth ? 'past' : ''}
+                ${!isClickable ? 'not-clickable' : ''}
+              `}
+              onClick={() => isClickable && onDateSelect(date)}
             >
               <span className="day-number">{format(date, 'd')}</span>
               {isCurrentMonth && status !== 'AVAILABLE' && (
@@ -241,7 +256,7 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
           -webkit-tap-highlight-color: transparent;
         }
         @media (hover: hover) {
-          .calendar-day:hover:not(.outside-month) {
+          .calendar-day:hover:not(.outside-month):not(.not-clickable) {
             background: #f1f5f9;
             border-color: #cbd5e1;
           }
@@ -295,6 +310,25 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
         .status-blocked:not(.selected) { background: #f8fafc; color: #64748b; }
         .status-in_progress:not(.selected) { background: #fff7ed; color: #9a3412; }
         .status-available:not(.selected) { background: #f0fdf4; color: #166534; }
+
+        /* Past date styling - applied to ALL past dates */
+        .calendar-day.past:not(.selected) {
+          background: #f8fafc !important; /* Very light gray bg */
+          color: #94a3b8 !important; /* Gray text */
+        }
+
+        /* Ensure dots on past dates are visible */
+        .calendar-day.past .status-dot {
+          opacity: 0.8;
+        }
+        
+        .calendar-day.not-clickable {
+          cursor: default;
+        }
+
+        /* Ensure past bookings are still readable but maybe slightly dimmed if desired, 
+           or kept same as normal bookings but allowed interactions */
+        
       `}</style>
     </div>
   );
