@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useHallStore } from '../../context/useHallStore';
 import type { Hall } from '../../types';
 import { toast } from 'react-hot-toast';
-import { Plus, MapPin, Users, ListOrdered } from 'lucide-react';
+import { Plus, MapPin, Users, SlidersHorizontal } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { CreateHallModal } from '../../components/owner/CreateHallModal';
 
@@ -16,7 +16,6 @@ export const OwnerDashboard = () => {
     const [searchParams] = useSearchParams();
 
     useEffect(() => {
-        // fetchHalls handles silent background updates if already loaded
         fetchHalls();
     }, [searchParams.get('refresh'), fetchHalls]);
 
@@ -36,27 +35,28 @@ export const OwnerDashboard = () => {
         }
     };
 
-
-
-    // Only show full-page loading if it's the very first load and we're currently fetching
     if (isLoading && halls.length === 0) return (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-            Loading...
+            <div className="loader">Loading...</div>
         </div>
     );
 
     const activeHalls = halls.filter(h => h.status !== 'DELETED');
 
     return (
-        <div className="container" style={{ paddingTop: '0.25rem', paddingBottom: '0.5rem' }}>
+        <div className="container dashboard-container">
             <div className="dashboard-header">
-                <Button variant="outline" onClick={() => { }} style={{ padding: '0.25rem 0.5rem', height: 'auto', border: '1px solid #e2e8f0' }}>
-                    <ListOrdered size={16} style={{ marginRight: '0.4rem' }} />Filter
-                </Button>
-
-                <div className="header-action-right">
-                    <Button variant="primary" onClick={handleCreateNew} style={{ whiteSpace: 'nowrap', padding: '0.25rem 0.75rem' }}>
-                        <Plus size={18} style={{ marginRight: '0.25rem', flexShrink: 0 }} />Add
+                <div className="header-left">
+                    <h3 className="page-title">Hall Management</h3>
+                </div>
+                <div className="header-actions">
+                    <Button variant="outline" onClick={() => { }} className="filter-btn">
+                        <SlidersHorizontal size={18} />
+                        <span>Filter</span>
+                    </Button>
+                    <Button variant="primary" onClick={handleCreateNew} className="add-btn">
+                        <Plus size={18} />
+                        <span>Add Hall</span>
                     </Button>
                 </div>
             </div>
@@ -146,15 +146,28 @@ export const OwnerDashboard = () => {
             }
 
             <style>{`
+                .dashboard-container {
+                    padding: 0.5rem 0.5rem;
+                    max-width: 1200px;
+                }
                 .dashboard-header {
                     display: flex;
                     justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 0.5rem;
-                    padding-bottom: 0.25rem;
-                    min-height: 40px;
+                    align-items: flex-end;
+                    margin-bottom: 1.5rem;
+                    gap: 1rem;
                 }
-                /* Removed unnecessary classes */
+                .page-title {
+                    font-size: 1.5rem;
+                    font-weight: 800;
+                    color: var(--color-text-main);
+                    line-height: 1.2;
+                }
+                .header-actions {
+                    display: flex;
+                    gap: 0.75rem;
+                }
+                
                 .hall-grid {
                     display: grid;
                     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -286,7 +299,20 @@ export const OwnerDashboard = () => {
                     display: flex;
                     flex-direction: column;
                 }
+
+                @media (max-width: 768px) {
+                    .dashboard-header {
+                        flex-direction: column;
+                        align-items: flex-start;
+                    }
+                    .header-actions {
+                        width: 100%;
+                    }
+                    .header-actions button {
+                        flex: 1;
+                    }
+                }
             `}</style>
-        </div >
+        </div>
     );
 };

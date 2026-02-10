@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../../context/useAuthStore';
 import { Button } from '../common/Button';
-import { User, LogOut, Search, MapPin, LayoutDashboard, ListOrdered } from 'lucide-react';
+import { User, LogOut, Search, MapPin, LayoutDashboard, Building2, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 
 export const Navbar = () => {
@@ -16,10 +16,7 @@ export const Navbar = () => {
   const urlZipcode = searchParams.get('zipcode');
   const [searchValue, setSearchValue] = useState('');
 
-  // Reset search value on route change, or set default from params if needed
-  // However, for the "Name search", we want it empty initially probably?
-  // If not on halls page, we want it empty to accept zip.
-  // If ON halls page with zip, we can use it to filter names.
+  const isOwnerOrAdmin = user?.role === 'OWNER' || user?.role === 'ADMIN';
 
   useEffect(() => {
     setSearchValue('');
@@ -46,12 +43,11 @@ export const Navbar = () => {
 
   const handleLogoClick = () => {
     if (urlZipcode) {
-      // "show the hall based on zipcode" -> Navigate, React handles the rest
       if (location.pathname !== '/halls' || searchParams.get('zipcode') !== urlZipcode) {
         navigate(`/halls?zipcode=${urlZipcode}`);
       }
     } else {
-      if (user?.role === 'ADMIN' || user?.role === 'OWNER') handleNavigation('/dashboard');
+      if (isOwnerOrAdmin) handleNavigation('/dashboard');
       else handleNavigation('/'); // Customer Fallback to Landing
     }
   };
@@ -62,13 +58,8 @@ export const Navbar = () => {
     const isHallListing = location.pathname.startsWith('/halls');
 
     if (isHallListing && urlZipcode) {
-      // "ask to enter the hall name to be search"
-      // We are already searching by zip, now filtering/searching by name
-      // Navigate to same page with name query? Or just rely on this component passing it?
-      // "it should land on hall listing page based on zipcode"
       navigate(`/halls?zipcode=${urlZipcode}&search=${searchValue}`);
     } else {
-      // "enter zipcode only" -> Navigate to halls with zip
       if (searchValue.trim().length >= 5) {
         navigate(`/halls?zipcode=${searchValue}`);
       }
@@ -84,7 +75,7 @@ export const Navbar = () => {
     <nav className="navbar">
       <div className="container nav-content">
 
-        {/* LEFT SECTION: Logo + Location */}
+        {/* LEFT SECTION: Logo + Location + Search Icon (Conditional) */}
         <div className="nav-left">
           <div className="brand" onClick={handleLogoClick}>
             <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '0.9', gap: '2px' }}>
@@ -92,6 +83,16 @@ export const Navbar = () => {
               <span className="brand-accent" style={{ fontSize: '1.1rem', fontWeight: 700 }}>Booking</span>
             </div>
           </div>
+
+          {isOwnerOrAdmin && (
+            <button
+              className="nav-search-icon-btn"
+              onClick={() => navigate('/halls')}
+              title="Search Halls"
+            >
+              <Search size={20} />
+            </button>
+          )}
 
           {urlZipcode && (
             <div className="location-badge">
@@ -101,9 +102,9 @@ export const Navbar = () => {
           )}
         </div>
 
-        {/* CENTER SECTION: Search Bar */}
+        {/* CENTER SECTION: Search Bar (Hidden for Owners/Admins) */}
         <div className="nav-center">
-          {location.pathname !== '/' && (
+          {!isOwnerOrAdmin && location.pathname !== '/' && (
             <form onSubmit={handleSearchSubmit} className="search-form">
               <input
                 type="text"
@@ -119,16 +120,14 @@ export const Navbar = () => {
           )}
         </div>
 
-        {/* RIGHT SECTION: Auth + Dashboard + Bookings */}
+        {/* RIGHT SECTION: Auth + Dashboard + Bookings/Halls */}
         <div className="nav-right">
           {/* Dashboard */}
           {isAuthenticated && (
             <div className="nav-item" title="Dashboard" onClick={() => {
-              // Always navigate with a new timestamp to trigger re-fetch
               navigate(`/dashboard?refresh=${Date.now()}`);
             }}>
               <LayoutDashboard size={18} />
-              {/* User requested name "Dashboard" specifically? user said "Dashboard (based on role...)" */}
               <span className="nav-label">Dashboard</span>
             </div>
           )}
@@ -139,7 +138,7 @@ export const Navbar = () => {
               const path = user?.role === 'OWNER' ? `/hall?refresh=${Date.now()}` : '/bookings';
               navigate(path);
             }} style={{ cursor: 'pointer' }}>
-              <ListOrdered size={18} />
+              {user?.role === 'OWNER' ? <Building2 size={18} /> : <SlidersHorizontal size={18} />}
               <span className="nav-label">{user?.role === 'OWNER' ? 'Hall' : 'Bookings'}</span>
             </div>
           )}
@@ -254,6 +253,23 @@ export const Navbar = () => {
                     padding: 0.25rem 0.25rem 0.25rem 0.75rem;
                     transition: box-shadow 0.2s;
                 }
+                .nav-search-icon-btn {
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0.5rem;
+                    color: var(--color-text-muted);
+                    border-radius: 50%;
+                    transition: all 0.2s;
+                    margin-left: 0.5rem;
+                }
+                .nav-search-icon-btn:hover {
+                    background: var(--color-background);
+                    color: var(--color-primary);
+                }
                 .search-form:focus-within {
                     box-shadow: 0 0 0 2px var(--color-primary-light);
                     background: white;
@@ -286,7 +302,7 @@ export const Navbar = () => {
                 .nav-right {
                     display: flex;
                     align-items: center;
-                    gap: 0.75rem;
+                    gap: 0.25rem;
                     justify-content: flex-end;
                     flex-shrink: 0;
                 }
@@ -294,6 +310,13 @@ export const Navbar = () => {
                     display: flex;
                     align-items: center;
                     gap: 0.5rem;
+                    padding: 0.4rem 0.75rem;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+                .nav-item:hover {
+                    background: #f1f5f9;
                 }
                 .icon-btn-ghost {
                     background: none;

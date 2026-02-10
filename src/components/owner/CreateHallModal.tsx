@@ -144,9 +144,7 @@ export const CreateHallModal = ({ isOpen, onClose, onSuccess, hallToEdit, initia
             <div className={`modal-content ${isViewMode ? 'view-mode' : ''}`}>
                 <div className="modal-header">
                     <h3>{isViewMode ? 'Hall Details' : (hallToEdit ? 'Edit Hall' : 'Add New Hall')}</h3>
-                    <div className="header-actions">
                         <button onClick={onClose} className="close-btn"><X size={24} /></button>
-                    </div>
                 </div>
 
                 <form onSubmit={handleSubmit} className="modal-form">
@@ -379,11 +377,6 @@ export const CreateHallModal = ({ isOpen, onClose, onSuccess, hallToEdit, initia
                     align-items: center;
                     background: white;
                     z-index: 10;
-                }
-                .header-actions {
-                    display: flex;
-                    align-items: center;
-                    gap: 1rem;
                 }
                 .delete-header-btn {
                     background: #fee2e2;
