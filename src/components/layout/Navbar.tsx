@@ -135,7 +135,7 @@ export const Navbar = () => {
 
           {/* Bookings (Conditional) */}
           {isAuthenticated && (user?.role === 'OWNER' || user?.role === 'CUSTOMER') && (
-            <div className="nav-item" title="My Bookings">
+            <div className="nav-item" title="My Bookings" onClick={() => navigate(user?.role === 'OWNER' ? '/hall/booking' : '/bookings')} style={{ cursor: 'pointer' }}>
               <ListOrdered size={18} />
               <span className="nav-label">Bookings</span>
             </div>

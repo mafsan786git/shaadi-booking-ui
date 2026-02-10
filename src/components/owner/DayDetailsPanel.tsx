@@ -1,8 +1,9 @@
 import React from 'react';
-import { format, parseISO, isBefore, startOfDay } from 'date-fns';
-import { Calendar, Info, Plus } from 'lucide-react';
+import { format, isBefore, startOfDay } from 'date-fns';
+import { Info, Plus } from 'lucide-react';
 import type { Booking, AvailabilityStatus } from '../../types';
 import { Button } from '../common/Button';
+import { BookingCard } from '../common/BookingCard';
 
 interface DayDetailsPanelProps {
   selectedDate: Date;
@@ -39,32 +40,7 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
     }
   };
 
-  /* Helper to format any enum-like string (First letter capital, rest small) */
-  const formatEnum = (value: string) => {
-    if (!value) return '';
-    return value
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
-  };
 
-
-
-  /* Helper to get color for booking status */
-  const getBookingStatusStyle = (status: string) => {
-    switch (status) {
-      case 'CONFIRMED': return { color: '#16a34a', bg: '#dcfce7' }; // Green
-      case 'REQUESTED': return { color: '#d97706', bg: '#fef3c7' }; // Amber
-      case 'OWNER_RESPONDED': return { color: '#2563eb', bg: '#dbeafe' }; // Blue
-      case 'CANCELLED_BY_OWNER':
-      case 'CANCELLED_BY_CUSTOMER':
-      case 'DECLINED_BY_OWNER':
-      case 'REJECTED_BY_CUSTOMER':
-      case 'EXPIRED':
-        return { color: '#dc2626', bg: '#fee2e2' }; // Red
-      default: return { color: '#475569', bg: '#f1f5f9' }; // Slate
-    }
-  };
 
   return (
     <>
@@ -81,61 +57,14 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
         <div className="bookings-list-container">
           {bookings.map((booking) => {
             const isSelected = !!selectedBookingId && booking.id === selectedBookingId;
-            const style = getBookingStatusStyle(booking.status);
-
             return (
-              <div
+              <BookingCard
                 key={booking.id}
-                className={`detail-card booking-card ${isSelected ? 'selected-card' : ''}`}
-                style={{
-                  borderColor: style.color
-                }}
-              >
-                {/* Top Row: Name & View - Clickable */}
-                <div
-                  className="bc-row top-row clickable-header"
-                  onClick={() => onEditBooking?.(booking)}
-                  title="View Booking Details"
-                >
-                  <h4 className="customer-name">{booking.customerName}</h4>
-                  <button
-                    className="view-btn"
-                    type="button"
-                  >
-                    View
-                  </button>
-                </div>
-
-                {/* Middle Row: Date, Event, Guest */}
-                <div className="bc-middle">
-                  <div className="bc-info-line bc-date">
-                    <Calendar size={12} style={{ marginRight: '4px', opacity: 0.7 }} />
-                    {booking.startDate === booking.endDate
-                      ? format(parseISO(booking.startDate), 'dd MMM yyyy')
-                      : `${format(parseISO(booking.startDate), 'dd MMM')} - ${format(parseISO(booking.endDate), 'dd MMM yyyy')}`
-                    }
-                  </div>
-                  <div className="bc-info-line">
-                    <span style={{ opacity: 0.7 }}>Event:</span> {formatEnum(booking.eventType)}
-                  </div>
-                  <div className="bc-info-line">
-                    <span style={{ opacity: 0.7 }}>Guests:</span> {booking.totalGuest}
-                  </div>
-                </div>
-
-                {/* Bottom Row: Price & Status */}
-                <div className="bc-row bottom-row">
-                  <div className="price-tag">
-                    {booking.finalPrice ? `₹${booking.finalPrice.toLocaleString()}` : '-'}
-                  </div>
-                  <div
-                    className="status-tag"
-                    style={{ color: style.color, backgroundColor: style.bg }}
-                  >
-                    {formatEnum(booking.status)}
-                  </div>
-                </div>
-              </div>
+                booking={booking}
+                isSelected={isSelected}
+                onClick={() => onEditBooking?.(booking)}
+                onViewClick={() => onEditBooking?.(booking)}
+              />
             );
           })}
         </div>

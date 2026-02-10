@@ -61,7 +61,7 @@ export interface Hall {
 
 export type HallStatus = 'ACTIVE' | 'INACTIVE' | 'DELETED';
 
-export type BookingStatus = 'REQUESTED' | 'OWNER_RESPONDED' | 'CONFIRMED' | 'CANCELLED_BY_OWNER' | 'CANCELLED_BY_CUSTOMER' | 'DECLINED_BY_OWNER' | 'REJECTED_BY_CUSTOMER' | 'EXPIRED';
+export type BookingStatus = 'REQUESTED' | 'OWNER_RESPONDED' | 'CONFIRMED' | 'CANCELLED_BY_OWNER' | 'CANCELLED_BY_CUSTOMER' | 'DECLINED_BY_OWNER' | 'REJECTED_BY_CUSTOMER' | 'EXPIRED' | 'COMPLETED';
 
 export type EventType = 'WEDDING' | 'RECEPTION' | 'ENGAGEMENT' | 'BIRTHDAY' | 'ANNIVERSARY' | 'OTHER';
 
@@ -70,6 +70,7 @@ export type AvailabilityStatus = 'AVAILABLE' | 'CONFRIMED' | 'BLOCKED' | 'IN_PRO
 export interface Booking {
     id: string;
     hallId: string;
+    hallName?: string;
     customerPhone: string;
     customerName: string;
     startDate: string;       // ISO timestamps

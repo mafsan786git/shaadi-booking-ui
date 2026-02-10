@@ -8,6 +8,7 @@ import { MainLayout } from './components/layout/MainLayout';
 import { ProfilePage } from './pages/common/ProfilePage';
 import { DashboardPage } from './pages/common/DashboardPage';
 import { HallAvailabilityPage } from './pages/owner/HallAvailabilityPage';
+import { BookingsPage } from './pages/owner/BookingsPage';
 
 import { useEffect } from 'react';
 import { useAuthStore } from './context/useAuthStore';
@@ -36,13 +37,10 @@ function App() {
             <Route path="/halls" element={<HallListingPage />} />
             <Route path="/halls/:id" element={<HallDetailsPage />} />
             <Route path="/auth" element={<AuthPage />} />
-
-            // ...
-
-            // Inside Routes:
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/hall/availability" element={<HallAvailabilityPage />} />
+            <Route path="/hall/booking" element={<BookingsPage />} />
             {/* Redirect legacy specific routes to dashboard if needed, or just remove them. Removing them for cleaner URL enforcement. */}
           </Route>
         </Routes>

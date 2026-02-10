@@ -63,5 +63,16 @@ export const bookingService = {
     getBookingsForMonth: async (hallId: string, month: string): Promise<Booking[]> => {
         const response = await api.get(`/booking/hall/${hallId}?month=${month}`);
         return response.data;
+    },
+
+    completeBooking: async (id: string): Promise<Booking> => {
+        const response = await api.post(`/booking/${id}/complete`);
+        return response.data;
+    },
+
+    getAllBookings: async (startDate?: string): Promise<Booking[]> => {
+        const params = startDate ? { startDate } : {};
+        const response = await api.get('/booking/fetch/all', { params });
+        return response.data;
     }
 };
