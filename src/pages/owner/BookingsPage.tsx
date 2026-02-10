@@ -45,12 +45,14 @@ export const BookingsPage: React.FC = () => {
         return bookings.filter(b => {
             if (!b.startDate) return false;
             try {
-                const date = parseISO(b.startDate);
-                // Check if within week range (inclusive)
-                // isWithinInterval is useful but tricky with time.
-                // Simple comparison since we have start/end of week.
-                // Or just check if it falls in the week days.
-                return date >= weekStart && date <= weekEnd;
+                const start = parseISO(b.startDate);
+                const end = b.endDate ? parseISO(b.endDate) : start;
+
+                // A booking overlaps with the current week if:
+                // 1. Its start date is before or on the week's end
+                // AND
+                // 2. Its end date is on or after the week's start
+                return start <= weekEnd && end >= weekStart;
             } catch { return false; }
         }).sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
     }, [bookings, weekStart, weekEnd]);
