@@ -133,11 +133,14 @@ export const Navbar = () => {
             </div>
           )}
 
-          {/* Bookings (Conditional) */}
+          {/* Bookings / Hall (Conditional) */}
           {isAuthenticated && (user?.role === 'OWNER' || user?.role === 'CUSTOMER') && (
-            <div className="nav-item" title="My Bookings" onClick={() => navigate(user?.role === 'OWNER' ? '/hall/booking' : '/bookings')} style={{ cursor: 'pointer' }}>
+            <div className="nav-item" title={user?.role === 'OWNER' ? "Hall Management" : "My Bookings"} onClick={() => {
+              const path = user?.role === 'OWNER' ? `/hall?refresh=${Date.now()}` : '/bookings';
+              navigate(path);
+            }} style={{ cursor: 'pointer' }}>
               <ListOrdered size={18} />
-              <span className="nav-label">Bookings</span>
+              <span className="nav-label">{user?.role === 'OWNER' ? 'Hall' : 'Bookings'}</span>
             </div>
           )}
 

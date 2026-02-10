@@ -1,5 +1,6 @@
 import { useAuthStore } from '../../context/useAuthStore';
 import { OwnerDashboard } from '../owner/OwnerDashboard';
+import { BookingsPage } from '../owner/BookingsPage';
 import { UserManagementPage } from '../admin/UserManagementPage';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -22,7 +23,7 @@ export const DashboardPage = () => {
     }
 
     if (user.role === 'OWNER') {
-        return <OwnerDashboard />;
+        return <BookingsPage />;
     }
 
     if (user.role === 'CUSTOMER') {

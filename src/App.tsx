@@ -9,6 +9,7 @@ import { ProfilePage } from './pages/common/ProfilePage';
 import { DashboardPage } from './pages/common/DashboardPage';
 import { HallAvailabilityPage } from './pages/owner/HallAvailabilityPage';
 import { BookingsPage } from './pages/owner/BookingsPage';
+import { OwnerDashboard } from './pages/owner/OwnerDashboard';
 
 import { useEffect } from 'react';
 import { useAuthStore } from './context/useAuthStore';
@@ -40,7 +41,7 @@ function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/hall/availability" element={<HallAvailabilityPage />} />
-            <Route path="/hall/booking" element={<BookingsPage />} />
+            <Route path="/hall" element={<OwnerDashboard />} />
             {/* Redirect legacy specific routes to dashboard if needed, or just remove them. Removing them for cleaner URL enforcement. */}
           </Route>
         </Routes>

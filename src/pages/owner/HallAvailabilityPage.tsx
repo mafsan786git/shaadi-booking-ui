@@ -44,7 +44,7 @@ export const HallAvailabilityPage: React.FC = () => {
 
   useEffect(() => {
     if (!selectedHallId) {
-      navigate('/dashboard');
+      navigate('/hall');
       return;
     }
 
@@ -199,9 +199,9 @@ export const HallAvailabilityPage: React.FC = () => {
   return (
     <div className="container page-padding">
       <div className="page-header">
-        <button className="back-btn" onClick={() => navigate('/dashboard')}>
+        <button className="back-btn" onClick={() => navigate('/hall')}>
           <ChevronLeft size={20} />
-          <span>Back to Dashboard</span>
+          <span>Back to Hall</span>
         </button>
       </div>
 

@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, CheckCircle, XCircle, Plus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { bookingService } from '../../services/bookingService';
 import type { Booking } from '../../types';
 import { format, parseISO, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
@@ -11,6 +11,7 @@ import { Button } from '../../components/common/Button';
 
 export const BookingsPage: React.FC = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [isLoadingBookings, setIsLoadingBookings] = useState(false);
     const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 })); // Monday start
@@ -32,7 +33,7 @@ export const BookingsPage: React.FC = () => {
         };
 
         fetchBookings();
-    }, [currentWeekStart]);
+    }, [currentWeekStart, searchParams.get('refresh')]);
 
     const handleWeekChange = (direction: 'prev' | 'next') => {
         setCurrentWeekStart(prev => direction === 'prev' ? subWeeks(prev, 1) : addWeeks(prev, 1));
@@ -81,7 +82,7 @@ export const BookingsPage: React.FC = () => {
                     <div className="text-gray-400 mb-6 text-lg">No bookings found for this week</div>
                     <Button
                         variant="primary"
-                        onClick={() => navigate('/dashboard')}
+                        onClick={() => navigate('/hall')}
                         className="flex items-center"
                     >
                         <Plus size={18} className="mr-2" /> Request Booking
