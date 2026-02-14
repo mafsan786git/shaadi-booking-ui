@@ -46,9 +46,9 @@ export const OwnerDashboard = () => {
     return (
         <div className="container dashboard-container">
             <div className="dashboard-header">
-                <div className="header-left">
+                {/* <div className="header-left">
                     <h3 className="page-title">Hall Management</h3>
-                </div>
+                </div> */}
                 <div className="header-actions">
                     <Button variant="outline" onClick={() => { }} className="filter-btn">
                         <SlidersHorizontal size={18} />
@@ -148,13 +148,16 @@ export const OwnerDashboard = () => {
             <style>{`
                 .dashboard-container {
                     padding: 0.5rem 0.5rem;
+                    padding-bottom: 1rem;
                     max-width: 1200px;
+                    margin: 0 auto;
                 }
                 .dashboard-header {
                     display: flex;
                     justify-content: space-between;
                     align-items: flex-end;
                     margin-bottom: 1.5rem;
+                    margin-top: 0.5rem;
                     gap: 1rem;
                 }
                 .page-title {

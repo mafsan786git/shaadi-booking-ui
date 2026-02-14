@@ -27,8 +27,9 @@ export const BookingsPage: React.FC = () => {
         const loadData = async () => {
             setIsLoadingBookings(true);
             try {
-                // Fetch ALL bookings to populate stats and pending list correctly
-                const allBookings = await bookingService.getAllBookings();
+                // Fetch bookings starting from the current week
+                const formattedDate = format(currentWeekStart, 'yyyy-MM-dd');
+                const allBookings = await bookingService.getAllBookings(formattedDate);
                 setBookings(allBookings);
 
                 if (halls.length === 0) {
@@ -43,7 +44,7 @@ export const BookingsPage: React.FC = () => {
         };
 
         loadData();
-    }, [searchParams.get('refresh')]);
+    }, [currentWeekStart, searchParams.get('refresh')]);
 
     const handleWeekChange = (direction: 'prev' | 'next') => {
         setCurrentWeekStart(prev => direction === 'prev' ? subWeeks(prev, 1) : addWeeks(prev, 1));
@@ -121,10 +122,9 @@ export const BookingsPage: React.FC = () => {
         <div className="dashboard-container">
             {/* Header */}
             <div className="dashboard-header">
-                <div>
-                    <h1 className="page-title">Owner Dashboard</h1>
-                    <p className="page-subtitle">Manage your bookings and requests</p>
-                </div>
+                {/* <div>
+                    <h3 className="page-title">Owner Dashboard</h3>
+                </div> */}
                 <div className="header-actions">
                     <Button
                         variant="outline"
@@ -304,18 +304,20 @@ export const BookingsPage: React.FC = () => {
             <style>{`
                 /* Layout */
                 .dashboard-container {
-                    padding: 1rem;
-                    padding-bottom: 5rem;
-                    max-width: 1280px;
+                    padding: 0.5rem 0.5rem;
+                    padding-bottom: 1rem;
+                    max-width: 1200px;
                     margin: 0 auto;
                 }
 
                 /* Header */
                 .dashboard-header {
                     display: flex;
-                    flex-direction: column;
+                    justify-content: space-between;
+                    align-items: flex-end;
+                    margin-bottom: 1.5rem;
+                    margin-top: 0.5rem;
                     gap: 1rem;
-                    margin-bottom: 2rem;
                 }
                 
                 @media (min-width: 768px) {
@@ -418,8 +420,8 @@ export const BookingsPage: React.FC = () => {
                 .stats-grid {
                     display: grid;
                     grid-template-columns: 1fr;
-                    gap: 1rem;
-                    margin-bottom: 2rem;
+                    gap: 0.5rem;
+                    margin-bottom: 01rem;
                 }
 
                 @media (min-width: 768px) {
@@ -471,7 +473,7 @@ export const BookingsPage: React.FC = () => {
 
                 /* Sections */
                 .section-container {
-                    margin-bottom: 2.5rem;
+                    margin-bottom: 1rem;
                 }
 
                 .section-header {
