@@ -178,33 +178,48 @@ export const BookingsPage: React.FC = () => {
             {/* Summary Stats Row */}
             <div className="stats-grid">
                 <div className="stat-card">
+                    <div className="stat-icon bg-amber">
+                        <AlertCircle size={18} />
+                    </div>
                     <div>
                         <p className="stat-label">Pending Requests</p>
+                        {/* <p className="stat-value text-amber">{stats.pending}</p> */}
+                    </div>
+                    <div>
+                        {/* <p className="stat-label">Pending Requests</p> */}
                         <p className="stat-value text-amber">{stats.pending}</p>
                     </div>
-                    <div className="stat-icon bg-amber">
-                        <AlertCircle size={24} />
-                    </div>
+
                 </div>
 
                 <div className="stat-card">
+                    <div className="stat-icon bg-emerald">
+                        <CheckCircle size={18} />
+                    </div>
                     <div>
                         <p className="stat-label">Total Confirmed</p>
+                        {/* <p className="stat-value text-emerald">{stats.confirmed}</p> */}
+                    </div>
+                    <div>
+                        {/* <p className="stat-label">Total Confirmed</p> */}
                         <p className="stat-value text-emerald">{stats.confirmed}</p>
                     </div>
-                    <div className="stat-icon bg-emerald">
-                        <CheckCircle size={24} />
-                    </div>
+
                 </div>
 
                 <div className="stat-card">
+                    <div className="stat-icon bg-blue">
+                        <Calendar size={18} />
+                    </div>
                     <div>
                         <p className="stat-label">This Week</p>
+                        {/* <p className="stat-value text-blue">{stats.thisWeekCount}</p> */}
+                    </div>
+                    <div>
+                        {/* <p className="stat-label">This Week</p> */}
                         <p className="stat-value text-blue">{stats.thisWeekCount}</p>
                     </div>
-                    <div className="stat-icon bg-blue">
-                        <Calendar size={24} />
-                    </div>
+
                 </div>
             </div>
 
@@ -588,6 +603,7 @@ export const BookingsPage: React.FC = () => {
                     border: 1px solid #e5e7eb;
                     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
                     overflow-x: auto;
+                    justify-content: space-between;
                 }
                 
                 .filter-btn {
@@ -620,6 +636,7 @@ export const BookingsPage: React.FC = () => {
                     border-radius: 0.5rem;
                     border: 1px solid #e5e7eb;
                     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+                    justify-content: space-between;
                 }
                 
                 .nav-btn {
@@ -636,8 +653,8 @@ export const BookingsPage: React.FC = () => {
                 }
                 
                 .week-label {
-                    font-size: 0.875rem;
-                    font-weight: 500;
+                    font-size: 1rem;
+                    font-weight: 600;
                     width: 9rem;
                     text-align: center;
                     color: #374151;
