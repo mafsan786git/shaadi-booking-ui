@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, CheckCircle, XCircle, Plus, Building2, Filter, AlertCircle, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, CheckCircle, XCircle, Plus, Building2, Filter, AlertCircle, Clock, CalendarPlus, CheckSquare, ClipboardCheck } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { bookingService } from '../../services/bookingService';
 import type { Booking, BookingStatus } from '../../types';
-import { format, parseISO, startOfWeek, endOfWeek, addWeeks, subWeeks, isSameWeek } from 'date-fns';
+import { format, parseISO, startOfWeek, endOfWeek, addWeeks, subWeeks, isSameWeek, eachDayOfInterval, isWithinInterval } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { BookingCard } from '../../components/common/BookingCard';
 import { Button } from '../../components/common/Button';
@@ -61,20 +61,66 @@ export const BookingsPage: React.FC = () => {
             .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
     }, [bookings]);
 
-    // 2. Summary Stats (Based on ALL bookings or relevant window? Let's use All Upcoming + This Month context)
+    const pendingSectionRef = React.useRef<HTMLDivElement>(null);
+
+    // 2. Summary Stats
     const stats = useMemo(() => {
-        const confirmed = bookings.filter(b => b.status === 'CONFIRMED').length;
+        const confirmedBookings = bookings.filter(b => b.status === 'CONFIRMED');
+        const confirmed = confirmedBookings.length;
         const pending = pendingRequests.length;
+        const completed = bookings.filter(b => b.status === 'COMPLETED').length;
+        const cancelled = bookings.filter(b => ['CANCELLED_BY_OWNER', 'CANCELLED_BY_CUSTOMER', 'DECLINED_BY_OWNER', 'REJECTED_BY_CUSTOMER'].includes(b.status)).length;
+
         // For "This Week", we calculate based on the current week start
         const thisWeekCount = bookings.filter(b => {
             if (!b.startDate) return false;
-            const start = parseISO(b.startDate);
-            return start >= weekStart && start <= weekEnd;
+            try {
+                const start = parseISO(b.startDate);
+                return start >= weekStart && start <= weekEnd;
+            } catch { return false; }
         }).length;
 
-        return { confirmed, pending, thisWeekCount };
-    }, [bookings, pendingRequests, weekStart, weekEnd]);
+        // Calculate Available Slots in this week
+        let availableSlots = 0;
+        if (halls.length > 0) {
+            const daysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
+            // Total slots = days * halls
+            // Subtract slots that are booked
+
+            daysInWeek.forEach(day => {
+                halls.forEach(hall => {
+                    // Check if this hall is booked on this day
+                    const isBooked = bookings.some(b => {
+                        if (b.hallId !== hall.hallId) return false;
+                        if (!['REQUESTED', 'OWNER_RESPONDED', 'CONFIRMED', 'COMPLETED'].includes(b.status)) return false;
+
+                        try {
+                            const start = parseISO(b.startDate);
+                            const end = b.endDate ? parseISO(b.endDate) : start;
+                            return isWithinInterval(day, { start, end });
+                        } catch { return false; }
+                    });
+
+                    if (!isBooked) {
+                        availableSlots++;
+                    }
+                });
+            });
+        }
+
+        return { confirmed, pending, thisWeekCount, completed, cancelled, availableSlots };
+    }, [bookings, pendingRequests, weekStart, weekEnd, halls]);
+
+    const handleStatClick = (type: string) => {
+        if (type === 'PENDING') {
+            pendingSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else if (type === 'THIS_WEEK') { // Show all for available too, or maybe implement available filter later?
+            setStatusFilter('ALL');
+        } else {
+            setStatusFilter(type as StatusFilterType);
+        }
+    };
 
     // 3. Weekly Grid Bookings (Filtered by Week AND Status Filter)
     const weeklyGridBookings = useMemo(() => {
@@ -102,7 +148,6 @@ export const BookingsPage: React.FC = () => {
         }).sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
     }, [bookings, weekStart, weekEnd, statusFilter]);
 
-
     const handleRequestBooking = (hallId?: string) => {
         setIsHallDropdownOpen(false);
         // Navigate to availability page for the specific hall
@@ -117,14 +162,10 @@ export const BookingsPage: React.FC = () => {
         }
     };
 
-
     return (
         <div className="dashboard-container">
             {/* Header */}
             <div className="dashboard-header">
-                {/* <div>
-                    <h3 className="page-title">Owner Dashboard</h3>
-                </div> */}
                 <div className="header-actions">
                     <Button
                         variant="outline"
@@ -177,55 +218,76 @@ export const BookingsPage: React.FC = () => {
 
             {/* Summary Stats Row */}
             <div className="stats-grid">
-                <div className="stat-card">
-                    <div className="stat-icon bg-amber">
-                        <AlertCircle size={18} />
-                    </div>
-                    <div>
-                        <p className="stat-label">Pending Requests</p>
-                        {/* <p className="stat-value text-amber">{stats.pending}</p> */}
-                    </div>
-                    <div>
-                        {/* <p className="stat-label">Pending Requests</p> */}
-                        <p className="stat-value text-amber">{stats.pending}</p>
-                    </div>
-
-                </div>
-
-                <div className="stat-card">
-                    <div className="stat-icon bg-emerald">
-                        <CheckCircle size={18} />
-                    </div>
-                    <div>
-                        <p className="stat-label">Total Confirmed</p>
-                        {/* <p className="stat-value text-emerald">{stats.confirmed}</p> */}
-                    </div>
-                    <div>
-                        {/* <p className="stat-label">Total Confirmed</p> */}
-                        <p className="stat-value text-emerald">{stats.confirmed}</p>
-                    </div>
-
-                </div>
-
-                <div className="stat-card">
-                    <div className="stat-icon bg-blue">
-                        <Calendar size={18} />
-                    </div>
+                {/* This Week */}
+                <div className="stat-card clickable" onClick={() => handleStatClick('THIS_WEEK')}>
                     <div>
                         <p className="stat-label">This Week</p>
-                        {/* <p className="stat-value text-blue">{stats.thisWeekCount}</p> */}
-                    </div>
-                    <div>
-                        {/* <p className="stat-label">This Week</p> */}
                         <p className="stat-value text-blue">{stats.thisWeekCount}</p>
                     </div>
+                    <div className="stat-icon-small text-blue">
+                        <Calendar size={16} />
+                    </div>
+                </div>
 
+                {/* Confirmed */}
+                <div className="stat-card clickable" onClick={() => handleStatClick('CONFIRMED')}>
+                    <div>
+                        <p className="stat-label">Confirmed</p>
+                        <p className="stat-value text-emerald">{stats.confirmed}</p>
+                    </div>
+                    <div className="stat-icon-small text-emerald">
+                        <CheckCircle size={16} />
+                    </div>
+                </div>
+                
+                {/* Pending */}
+                <div className="stat-card clickable" onClick={() => handleStatClick('PENDING')}>
+                    <div>
+                        <p className="stat-label">Pending</p>
+                        <p className="stat-value text-amber">{stats.pending}</p>
+                    </div>
+                    <div className="stat-icon-small text-amber">
+                        <AlertCircle size={16} />
+                    </div>
+                </div>
+
+                {/* Available */}
+                <div className="stat-card clickable" onClick={() => handleStatClick('AVAILABLE')}>
+                    <div>
+                        <p className="stat-label">Available</p>
+                        <p className="stat-value text-emerald">{stats.availableSlots}</p>
+                    </div>
+                    <div className="stat-icon-small text-emerald">
+                        <CalendarPlus size={16} />
+                    </div>
+                </div>
+
+                {/* Completed */}
+                <div className="stat-card clickable" onClick={() => handleStatClick('COMPLETED')}>
+                    <div>
+                        <p className="stat-label">Completed</p>
+                        <p className="stat-value text-gray">{stats.completed}</p>
+                    </div>
+                    <div className="stat-icon-small text-gray">
+                        <ClipboardCheck size={16} />
+                    </div>
+                </div>
+
+                {/* Cancelled */}
+                <div className="stat-card clickable" onClick={() => handleStatClick('CANCELLED')}>
+                    <div>
+                        <p className="stat-label">Cancelled</p>
+                        <p className="stat-value text-red">{stats.cancelled}</p>
+                    </div>
+                    <div className="stat-icon-small text-red">
+                        <XCircle size={16} />
+                    </div>
                 </div>
             </div>
 
             {/* Pending Requests Section */}
             {pendingRequests.length > 0 && (
-                <div className="section-container">
+                <div ref={pendingSectionRef} className="section-container">
                     <div className="section-header">
                         <h2 className="section-title">
                             <span className="indicator bg-amber"></span>
@@ -437,57 +499,82 @@ export const BookingsPage: React.FC = () => {
                 /* Stats Grid */
                 .stats-grid {
                     display: grid;
-                    grid-template-columns: 1fr;
+                    grid-template-columns: repeat(2, 1fr);
                     gap: 0.5rem;
-                    margin-bottom: 01rem;
+                    margin-bottom: 1.5rem;
                 }
 
-                @media (min-width: 768px) {
+                @media (min-width: 0) {
                     .stats-grid {
                         grid-template-columns: repeat(3, 1fr);
+                    }
+                }
+                
+                @media (min-width: 1024px) {
+                    .stats-grid {
+                        grid-template-columns: repeat(6, 1fr);
                     }
                 }
 
                 .stat-card {
                     background: white;
-                    padding: 0.5rem 1rem;
-                    border-radius: 0.75rem;
+                    padding: 0.5rem;
+                    border-radius: 0.5rem;
                     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
                     border: 1px solid #f3f4f6;
                     display: flex;
+                    flex-direction: column;
                     align-items: center;
-                    justify-content: space-between;
+                    justify-content: center;
+                    text-align: center;
+                    transition: all 0.2s ease;
+                }
+                
+                .stat-card.clickable {
+                    cursor: pointer;
+                }
+                
+                .stat-card.clickable:hover {
+                    background: #f9fafb;
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
                 }
 
                 .stat-label {
                     color: #6b7280;
-                    font-size: 0.875rem;
+                    font-size: 0.75rem;
                     font-weight: 500;
                     margin: 0;
+                    line-height: 1.2;
                 }
 
                 .stat-value {
-                    font-size: 1.5rem;
+                    font-size: 1.25rem;
                     font-weight: 700;
-                    margin: 0.25rem 0 0 0;
+                    margin: 0.25rem 0;
+                    line-height: 1;
                 }
-
-                .stat-icon {
-                    padding: 0.75rem;
-                    border-radius: 0.5rem;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
+                
+                .stat-icon-small {
+                    margin-top: 0.25rem;
+                    opacity: 0.8;
                 }
 
                 .stat-value.text-amber { color: #d97706; }
-                .stat-icon.bg-amber { background: #fffbeb; color: #d97706; }
+                .stat-icon-small.text-amber { color: #d97706; }
                 
                 .stat-value.text-emerald { color: #059669; }
-                .stat-icon.bg-emerald { background: #ecfdf5; color: #059669; }
+                .stat-icon-small.text-emerald { color: #059669; }
 
                 .stat-value.text-blue { color: #2563eb; }
-                .stat-icon.bg-blue { background: #eff6ff; color: #2563eb; }
+                .stat-icon-small.text-blue { color: #2563eb; }
+                
+                .stat-value.text-gray { color: #4b5563; }
+                .stat-icon-small.text-gray { color: #4b5563; }
+                
+                .stat-value.text-red { color: #dc2626; }
+                .stat-icon-small.text-red { color: #dc2626; }
+
 
                 /* Sections */
                 .section-container {
