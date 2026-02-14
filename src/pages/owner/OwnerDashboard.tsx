@@ -147,8 +147,10 @@ export const OwnerDashboard = () => {
 
             <style>{`
                 .dashboard-container {
-                    padding: 0.5rem 0.5rem;
+                    padding-top: 0.5rem;
                     padding-bottom: 1rem;
+                    padding-left: 0.75rem;
+                    padding-right: 0.75rem;
                     max-width: 1200px;
                     margin: 0 auto;
                 }

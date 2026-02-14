@@ -321,8 +321,10 @@ export const BookingsPage: React.FC = () => {
             <style>{`
                 /* Layout */
                 .dashboard-container {
-                    padding: 0.5rem 0.5rem;
+                    padding-top: 0.5rem;
                     padding-bottom: 1rem;
+                    padding-left: 0.75rem;
+                    padding-right: 0.75rem;
                     max-width: 1200px;
                     margin: 0 auto;
                 }
@@ -662,7 +664,6 @@ export const BookingsPage: React.FC = () => {
                 .week-label {
                     font-size: 0.80rem;
                     font-weight: 600;
-                    width: 9rem;
                     text-align: center;
                     color: #374151;
                 }
