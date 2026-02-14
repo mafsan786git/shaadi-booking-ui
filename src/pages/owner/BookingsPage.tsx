@@ -279,11 +279,13 @@ export const BookingsPage: React.FC = () => {
                         <div className="week-nav">
                             <button onClick={() => handleWeekChange('prev')} className="nav-btn">
                                 <ChevronLeft size={18} />
+                                <span className="nav-text">Prev Week</span>
                             </button>
                             <span className="week-label">
                                 {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d')}
                             </span>
                             <button onClick={() => handleWeekChange('next')} className="nav-btn">
+                                <span className="nav-text">Next Week</span>
                                 <ChevronRight size={18} />
                             </button>
                         </div>
@@ -337,9 +339,8 @@ export const BookingsPage: React.FC = () => {
                 
                 @media (min-width: 768px) {
                     .dashboard-header {
-                        flex-direction: row;
-                        justify-content: space-between;
-                        align-items: center;
+                        flex-direction: column;
+                        align-items: flex-start;
                     }
                 }
 
@@ -640,12 +641,18 @@ export const BookingsPage: React.FC = () => {
                 }
                 
                 .nav-btn {
-                    padding: 0.375rem;
+                    padding: 0.375rem 0.75rem;
                     border-radius: 0.375rem;
                     color: #4b5563;
                     display: flex;
                     align-items: center;
                     justify-content: center;
+                    gap: 0.25rem;
+                }
+                
+                .nav-text {
+                    font-size: 0.80rem;
+                    font-weight: 600;
                 }
                 
                 .nav-btn:hover {
@@ -653,7 +660,7 @@ export const BookingsPage: React.FC = () => {
                 }
                 
                 .week-label {
-                    font-size: 1rem;
+                    font-size: 0.80rem;
                     font-weight: 600;
                     width: 9rem;
                     text-align: center;
