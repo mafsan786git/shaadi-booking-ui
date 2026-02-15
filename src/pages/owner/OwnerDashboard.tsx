@@ -130,7 +130,9 @@ export const OwnerDashboard = () => {
                                     variant="primary"
                                     onClick={() => {
                                         setSelectedHallId(hall.hallId);
-                                        navigate(`/hall/availability`);
+                                        const monthParam = searchParams.get('month');
+                                        const query = monthParam ? `?month=${monthParam}` : '';
+                                        navigate(`/hall/availability${query}`);
                                     }}
                                     className="action-btn"
                                     disabled={hall.status !== 'ACTIVE'}

@@ -6,7 +6,7 @@ import type { Booking } from '../../types';
 import { format, parseISO, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isWithinInterval } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { BookingCard } from '../../components/common/BookingCard';
-import { Button } from '../../components/common/Button';
+
 import { useHallStore } from '../../context/useHallStore';
 
 type StatusFilterType = 'ALL' | 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
@@ -112,8 +112,27 @@ export const BookingsPage: React.FC = () => {
         return { confirmed, pending, thisWeekCount, completed, cancelled, availableSlots };
     }, [bookings, pendingRequests, weekStart, weekEnd, halls]);
 
+    const handleRequestBooking = (hallId?: string) => {
+        setIsHallDropdownOpen(false);
+        const monthStr = format(weekStart, 'yyyy-MM');
+
+        const targetHallId = hallId || (halls.length === 1 ? halls[0].hallId : undefined);
+
+        if (targetHallId) {
+            navigate(`/hall/availability?hallId=${targetHallId}&month=${monthStr}`);
+        } else {
+            navigate(`/hall?month=${monthStr}`);
+        }
+    };
+
     const handleStatClick = (type: string) => {
-        if (type === 'THIS_WEEK') { // Show all for available too, or maybe implement available filter later?
+        if (type === 'AVAILABLE') {
+            if (halls.length > 1) {
+                setIsHallDropdownOpen(!isHallDropdownOpen);
+            } else {
+                handleRequestBooking();
+            }
+        } else if (type === 'THIS_WEEK') {
             setStatusFilter('ALL');
         } else {
             setStatusFilter(type as StatusFilterType);
@@ -146,37 +165,26 @@ export const BookingsPage: React.FC = () => {
         }).sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
     }, [bookings, weekStart, weekEnd, statusFilter]);
 
-    const handleRequestBooking = (hallId?: string) => {
-        setIsHallDropdownOpen(false);
-        // Navigate to availability page for the specific hall
-        if (hallId) {
-            navigate(`/hall/availability?hallId=${hallId}`);
-        } else if (halls.length === 1) {
-            navigate(`/hall/availability?hallId=${halls[0].hallId}`);
-        } else {
-            // If multiple halls and no selection (shouldn't happen with dropdown), fallback
-            navigate('/hall');
-            toast('Please select a hall to request booking');
-        }
-    };
+    // Old handleRequestBooking removed
+
 
     return (
         <div className="dashboard-container">
             <div className="dashboard-header">
                 {/* Week Navigation */}
-                        <div className="week-nav">
-                            <button onClick={() => handleWeekChange('prev')} className="nav-btn">
-                                <ChevronLeft size={18} />
-                                <span className="nav-text">Prev Week</span>
-                            </button>
-                            <span className="week-label">
-                                {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d')}
-                            </span>
-                            <button onClick={() => handleWeekChange('next')} className="nav-btn">
-                                <span className="nav-text">Next Week</span>
-                                <ChevronRight size={18} />
-                            </button>
-                        </div>
+                <div className="week-nav">
+                    <button onClick={() => handleWeekChange('prev')} className="nav-btn">
+                        <ChevronLeft size={18} />
+                        <span className="nav-text">Prev Week</span>
+                    </button>
+                    <span className="week-label">
+                        {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d')}
+                    </span>
+                    <button onClick={() => handleWeekChange('next')} className="nav-btn">
+                        <span className="nav-text">Next Week</span>
+                        <ChevronRight size={18} />
+                    </button>
+                </div>
             </div>
 
             {/* Summary Stats Row */}
@@ -202,7 +210,7 @@ export const BookingsPage: React.FC = () => {
                         <CheckCircle size={16} />
                     </div>
                 </div>
-                
+
                 {/* Pending */}
                 <div className="stat-card clickable" onClick={() => handleStatClick('PENDING')}>
                     <div>
@@ -214,8 +222,14 @@ export const BookingsPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Available */}
-                <div className="stat-card clickable" onClick={() => handleStatClick('AVAILABLE')}>
+                {/* Available - With Relative Dropdown */}
+                <div
+                    className="stat-card clickable relative"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleStatClick('AVAILABLE');
+                    }}
+                >
                     <div>
                         <p className="stat-label">Available</p>
                         <p className="stat-value text-emerald">{stats.availableSlots}</p>
@@ -223,6 +237,26 @@ export const BookingsPage: React.FC = () => {
                     <div className="stat-icon-small text-emerald">
                         <CalendarPlus size={16} />
                     </div>
+
+                    {/* Dropdown */}
+                    {isHallDropdownOpen && halls.length > 1 && (
+                        <div
+                            className="hall-dropdown-menu"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="dropdown-header">Select Hall</div>
+                            {halls.map(hall => (
+                                <div
+                                    key={hall.hallId}
+                                    onClick={() => handleRequestBooking(hall.hallId)}
+                                    className="dropdown-item"
+                                >
+                                    <Building2 size={14} className="mr-2" />
+                                    <span className="truncate">{hall.name}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Completed */}
@@ -298,6 +332,8 @@ export const BookingsPage: React.FC = () => {
                 )}
             </div>
 
+
+
             <style>{`
                 /* Layout */
                 .dashboard-container {
@@ -370,10 +406,12 @@ export const BookingsPage: React.FC = () => {
                     z-index: 10;
                 }
 
-                .dropdown-menu {
+                .hall-dropdown-menu {
                     position: absolute;
-                    right: 0;
                     top: 100%;
+                    right: 0; /* Or left: 0 to align left, or transform to center */
+                    left: 50%;
+                    transform: translateX(-50%);
                     margin-top: 0.5rem;
                     width: 14rem;
                     background: white;
@@ -397,13 +435,15 @@ export const BookingsPage: React.FC = () => {
                 }
 
                 .dropdown-item {
-                    display: block;
+                    display: flex; /* Changed to flex for icon alignment */
+                    align-items: center;
                     width: 100%;
                     text-align: left;
                     padding: 0.5rem 1rem;
                     font-size: 0.875rem;
                     color: #374151;
                     transition: all 0.15s;
+                    cursor: pointer; /* Ensure pointer cursor */
                 }
 
                 .dropdown-item:hover {

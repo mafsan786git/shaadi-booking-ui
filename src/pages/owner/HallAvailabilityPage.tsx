@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Calendar as CalendarIcon, RefreshCcw } from 'lucide-react';
 import { AvailabilityCalendar } from '../../components/owner/AvailabilityCalendar';
 import { DayDetailsPanel } from '../../components/owner/DayDetailsPanel';
@@ -24,9 +24,12 @@ import { BookingModal } from '../../components/common/BookingModal';
 export const HallAvailabilityPage: React.FC = () => {
   const navigate = useNavigate();
 
+  const [searchParams] = useSearchParams(); // Add this
+
   // Use granular selectors to prevent unnecessary re-renders
   const halls = useHallStore(state => state.halls);
   const selectedHallId = useHallStore(state => state.selectedHallId);
+  const setSelectedHallId = useHallStore(state => state.setSelectedHallId); // Add this
   const fetchAvailability = useHallStore(state => state.fetchAvailability);
   const fetchMultiAvailability = useHallStore(state => state.fetchMultiAvailability);
   const availabilityCache = useHallStore(state => state.availabilityCache);
@@ -43,19 +46,41 @@ export const HallAvailabilityPage: React.FC = () => {
   const [monthBookings, setMonthBookings] = useState<Booking[]>([]);
 
   useEffect(() => {
-    if (!selectedHallId) {
+    const hallIdParam = searchParams.get('hallId');
+    const monthParam = searchParams.get('month');
+
+    // Handle Hall ID from URL
+    if (hallIdParam && hallIdParam !== selectedHallId) {
+      setSelectedHallId(hallIdParam);
+    } else if (!selectedHallId && !hallIdParam) {
+      // Only redirect if NO hall is selected and NO param provided
       navigate('/hall');
       return;
     }
 
-    // First check if hall exists in global store
-    const cachedHall = halls.find(h => h.hallId === selectedHallId);
-    if (cachedHall) {
-      setHall(cachedHall);
-    } else {
-      fetchHallDetails();
+    // Handle Month from URL
+    if (monthParam) {
+      const parsedMonth = parseISO(monthParam + '-01'); // Append day to make it valid ISO
+      if (!isNaN(parsedMonth.getTime()) && !isSameMonth(parsedMonth, currentMonth)) {
+        setCurrentMonth(parsedMonth);
+        setSelectedDate(startOfMonth(parsedMonth));
+      }
     }
-  }, [selectedHallId, halls, navigate]);
+
+    const effectiveHallId = hallIdParam || selectedHallId;
+
+    if (effectiveHallId) {
+      // First check if hall exists in global store
+      const cachedHall = halls.find(h => h.hallId === effectiveHallId);
+      if (cachedHall) {
+        setHall(cachedHall);
+      } else {
+        // If not in store, we might need to fetch it or generic fetch
+        fetchHallDetails(effectiveHallId);
+      }
+    }
+
+  }, [selectedHallId, halls, navigate, searchParams]); // Add searchParams
 
   // Stabilize pre-fetch function
   const prefetchAdjacentMonths = useCallback((hallId: string, baseDate: Date, force = false) => {
