@@ -293,15 +293,26 @@ export const BookingsPage: React.FC = () => {
                     <div className="weekly-controls">
                         {/* Status Filter */}
                         <div className="filter-group">
-                            {(['ALL', 'PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'] as StatusFilterType[]).map((filter) => (
-                                <button
-                                    key={filter}
-                                    onClick={() => setStatusFilter(filter)}
-                                    className={`filter-btn ${statusFilter === filter ? 'active' : ''}`}
-                                >
-                                    {filter === 'ALL' ? 'All' : filter.charAt(0) + filter.slice(1).toLowerCase()}
-                                </button>
-                            ))}
+                            {(['ALL', 'CONFIRMED', 'PENDING', 'COMPLETED', 'CANCELLED'] as StatusFilterType[]).map((filter) => {
+                                let activeClass = '';
+                                if (statusFilter === filter) {
+                                    if (filter === 'PENDING') activeClass = 'active-pending';
+                                    else if (filter === 'CONFIRMED') activeClass = 'active-confirmed';
+                                    else if (filter === 'COMPLETED') activeClass = 'active-completed';
+                                    else if (filter === 'CANCELLED') activeClass = 'active-cancelled';
+                                    else activeClass = 'active';
+                                }
+
+                                return (
+                                    <button
+                                        key={filter}
+                                        onClick={() => setStatusFilter(filter)}
+                                        className={`filter-btn ${activeClass}`}
+                                    >
+                                        {filter === 'ALL' ? 'All' : filter.charAt(0) + filter.slice(1).toLowerCase()}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
@@ -666,7 +677,31 @@ export const BookingsPage: React.FC = () => {
                 }
                 
                 .filter-btn.active {
-                    background: #111827;
+                    background: #2563eb;
+                    color: white;
+                    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+                }
+                
+                .filter-btn.active-pending {
+                    background: #d97706;
+                    color: white;
+                    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+                }
+                
+                .filter-btn.active-confirmed {
+                    background: #059669;
+                    color: white;
+                    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+                }
+                
+                .filter-btn.active-completed {
+                    background: #4b5563;
+                    color: white;
+                    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+                }
+                
+                .filter-btn.active-cancelled {
+                    background: #dc2626;
                     color: white;
                     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
                 }
