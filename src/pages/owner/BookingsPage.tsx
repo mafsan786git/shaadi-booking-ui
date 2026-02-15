@@ -362,7 +362,7 @@ export const BookingsPage: React.FC = () => {
             <style>{`
                 /* Layout */
                 .dashboard-container {
-                    padding-top: 0.5rem;
+                    padding-top: 1rem;
                     padding-bottom: 1rem;
                     padding-left: 0.75rem;
                     padding-right: 0.75rem;
