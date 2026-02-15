@@ -170,8 +170,24 @@ export const BookingsPage: React.FC = () => {
 
     return (
         <div className="dashboard-container">
-            {/* Header */}
             <div className="dashboard-header">
+                {/* Week Navigation */}
+                        <div className="week-nav">
+                            <button onClick={() => handleWeekChange('prev')} className="nav-btn">
+                                <ChevronLeft size={18} />
+                                <span className="nav-text">Prev Week</span>
+                            </button>
+                            <span className="week-label">
+                                {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d')}
+                            </span>
+                            <button onClick={() => handleWeekChange('next')} className="nav-btn">
+                                <span className="nav-text">Next Week</span>
+                                <ChevronRight size={18} />
+                            </button>
+                        </div>
+            </div>
+            {/* Header */}
+            {/*<div className="dashboard-header">
                 <div className="header-actions">
                     <Button
                         variant="outline"
@@ -195,7 +211,7 @@ export const BookingsPage: React.FC = () => {
                             <span>Request Booking</span>
                         </Button>
 
-                        {/* Hall Selection Dropdown */}
+                        //Hall Selection Dropdown
                         {isHallDropdownOpen && halls.length > 1 && (
                             <>
                                 <div
@@ -220,7 +236,7 @@ export const BookingsPage: React.FC = () => {
                         )}
                     </div>
                 </div>
-            </div>
+            </div>*/}
 
             {/* Summary Stats Row */}
             <div className="stats-grid">
@@ -342,21 +358,6 @@ export const BookingsPage: React.FC = () => {
                                 </button>
                             ))}
                         </div>
-
-                        {/* Week Navigation */}
-                        <div className="week-nav">
-                            <button onClick={() => handleWeekChange('prev')} className="nav-btn">
-                                <ChevronLeft size={18} />
-                                <span className="nav-text">Prev Week</span>
-                            </button>
-                            <span className="week-label">
-                                {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d')}
-                            </span>
-                            <button onClick={() => handleWeekChange('next')} className="nav-btn">
-                                <span className="nav-text">Next Week</span>
-                                <ChevronRight size={18} />
-                            </button>
-                        </div>
                     </div>
                 </div>
 
@@ -400,17 +401,14 @@ export const BookingsPage: React.FC = () => {
                 /* Header */
                 .dashboard-header {
                     display: flex;
-                    justify-content: space-between;
-                    align-items: flex-end;
-                    margin-bottom: 1.5rem;
-                    margin-top: 0.5rem;
-                    gap: 1rem;
+                    flex-direction: column;
+                    margin-bottom: 1rem;
                 }
                 
-                @media (min-width: 768px) {
+                @media (min-width: 640px) {
                     .dashboard-header {
-                        flex-direction: column;
-                        align-items: flex-start;
+                        flex-direction: row;
+                        justify-content: space-between;
                     }
                 }
 

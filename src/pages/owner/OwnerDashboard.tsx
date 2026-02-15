@@ -158,8 +158,8 @@ export const OwnerDashboard = () => {
                     display: flex;
                     justify-content: space-between;
                     align-items: flex-end;
-                    margin-bottom: 1.5rem;
-                    margin-top: 0.5rem;
+                    margin-bottom: 1rem;
+                  
                     gap: 1rem;
                 }
                 .page-title {
@@ -176,7 +176,7 @@ export const OwnerDashboard = () => {
                 .hall-grid {
                     display: grid;
                     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-                    gap: 1.5rem;
+                    gap: 1rem;
                 }
                 .hall-card {
                     background: white;
