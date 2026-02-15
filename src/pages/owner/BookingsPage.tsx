@@ -113,14 +113,6 @@ export const BookingsPage: React.FC = () => {
     }, [bookings, pendingRequests, weekStart, weekEnd, halls]);
 
     const handleStatClick = (type: string) => {
-        // if (type === 'PENDING') {
-        //     pendingSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        // } else if (type === 'THIS_WEEK') { // Show all for available too, or maybe implement available filter later?
-        //     setStatusFilter('ALL');
-        // } else {
-        //     setStatusFilter(type as StatusFilterType);
-        // }
-
         if (type === 'THIS_WEEK') { // Show all for available too, or maybe implement available filter later?
             setStatusFilter('ALL');
         } else {
@@ -186,57 +178,6 @@ export const BookingsPage: React.FC = () => {
                             </button>
                         </div>
             </div>
-            {/* Header */}
-            {/*<div className="dashboard-header">
-                <div className="header-actions">
-                    <Button
-                        variant="outline"
-                        onClick={() => navigate('/hall')}
-                        className="btn-with-icon"
-                    >
-                        <Building2 size={18} />
-                        <span className="btn-text">Manage Halls</span>
-                    </Button>
-
-                    <div className="relative-container">
-                        <Button
-                            variant="primary"
-                            onClick={() => {
-                                if (halls.length > 1) setIsHallDropdownOpen(!isHallDropdownOpen);
-                                else handleRequestBooking();
-                            }}
-                            className="btn-with-icon"
-                        >
-                            <Plus size={18} />
-                            <span>Request Booking</span>
-                        </Button>
-
-                        //Hall Selection Dropdown
-                        {isHallDropdownOpen && halls.length > 1 && (
-                            <>
-                                <div
-                                    className="dropdown-overlay"
-                                    onClick={() => setIsHallDropdownOpen(false)}
-                                />
-                                <div className="dropdown-menu">
-                                    <div className="dropdown-header">
-                                        Select Hall
-                                    </div>
-                                    {halls.map(hall => (
-                                        <button
-                                            key={hall.hallId}
-                                            onClick={() => handleRequestBooking(hall.hallId)}
-                                            className="dropdown-item"
-                                        >
-                                            {hall.name}
-                                        </button>
-                                    ))}
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </div>
-            </div>*/}
 
             {/* Summary Stats Row */}
             <div className="stats-grid">
@@ -306,36 +247,6 @@ export const BookingsPage: React.FC = () => {
                     </div>
                 </div>
             </div>
-
-            {/* Pending Requests Section */}
-            {/* {pendingRequests.length > 0 && (
-                <div ref={pendingSectionRef} className="section-container">
-                    <div className="section-header">
-                        <h2 className="section-title">
-                            <span className="indicator bg-amber"></span>
-                            Action Required
-                            <span className="badge bg-amber">
-                                {pendingRequests.length} Pending
-                            </span>
-                        </h2>
-                    </div>
-
-                    <div className="horizontal-scroll-container">
-                        <div className="horizontal-scroll-content">
-                            {pendingRequests.map(booking => (
-                                <div key={booking.id} className="scroll-item">
-                                    <BookingCard
-                                        booking={booking}
-                                        showHallName={true}
-                                        onClick={() => navigate(`/hall/availability?hallId=${booking.hallId}&month=${format(parseISO(booking.startDate), 'yyyy-MM')}`)}
-                                        onViewClick={(e) => navigate(`/hall/availability?hallId=${booking.hallId}&month=${format(parseISO(booking.startDate), 'yyyy-MM')}`)}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )} */}
 
             {/* Weekly Grid Section */}
             <div className="section-container">
