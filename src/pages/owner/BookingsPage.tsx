@@ -6,6 +6,7 @@ import type { Booking } from '../../types';
 import { format, parseISO, eachDayOfInterval, isWithinInterval, startOfDay, isBefore, addDays } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { BookingCard } from '../../components/common/BookingCard';
+import { BookingModal } from '../../components/common/BookingModal';
 
 import { useHallStore } from '../../context/useHallStore';
 
@@ -21,6 +22,8 @@ export const BookingsPage: React.FC = () => {
     const [currentWeekStart, setCurrentWeekStart] = useState(startOfDay(new Date())); // Start from today
     const [statusFilter, setStatusFilter] = useState<StatusFilterType>('ALL');
     const [isHallDropdownOpen, setIsHallDropdownOpen] = useState(false);
+    const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     // Initial Data Fetch
     useEffect(() => {
@@ -61,7 +64,6 @@ export const BookingsPage: React.FC = () => {
             .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
     }, [bookings]);
 
-    const pendingSectionRef = React.useRef<HTMLDivElement>(null);
 
     // 2. Summary Stats
     const stats = useMemo(() => {
@@ -349,14 +351,52 @@ export const BookingsPage: React.FC = () => {
                                 key={booking.id}
                                 booking={booking}
                                 showHallName={true}
-                                onClick={() => navigate(`/hall/availability?hallId=${booking.hallId}&month=${format(parseISO(booking.startDate), 'yyyy-MM')}`)}
-                                onViewClick={(e) => navigate(`/hall/availability?hallId=${booking.hallId}&month=${format(parseISO(booking.startDate), 'yyyy-MM')}`)}
+                                onClick={() => {
+                                    setSelectedBooking(booking);
+                                    setIsModalOpen(true);
+                                }}
+                                onViewClick={() => {
+                                    setSelectedBooking(booking);
+                                    setIsModalOpen(true);
+                                }}
                             />
                         ))}
                     </div>
                 )}
             </div>
 
+            {/* Booking Modal */}
+            {selectedBooking && (
+                <BookingModal
+                    isOpen={isModalOpen}
+                    onClose={() => {
+                        setIsModalOpen(false);
+                        setSelectedBooking(null);
+                    }}
+                    onSuccess={() => {
+                        setIsModalOpen(false);
+                        setSelectedBooking(null);
+                        // Refresh bookings
+                        const formattedDate = format(currentWeekStart, 'yyyy-MM-dd');
+                        bookingService.getAllBookings(formattedDate).then(setBookings);
+                    }}
+                    initialData={{
+                        customerName: selectedBooking.customerName,
+                        customerPhone: selectedBooking.customerPhone,
+                        startDate: selectedBooking.startDate,
+                        endDate: selectedBooking.endDate,
+                        eventType: selectedBooking.eventType,
+                        totalGuest: selectedBooking.totalGuest,
+                        customerNote: selectedBooking.customerNote,
+                        ownerNote: selectedBooking.ownerNote,
+                        finalPrice: selectedBooking.finalPrice,
+                    }}
+                    mode="OWNER"
+                    hallId={selectedBooking.hallId}
+                    readOnly={true}
+                    allowEdit={selectedBooking.endDate ? !isBefore(parseISO(selectedBooking.endDate), startOfDay(new Date())) : true}
+                />
+            )}
 
 
             <style>{`
