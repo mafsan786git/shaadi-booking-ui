@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, CheckCircle, XCircle, Plus, Building2, Filter, AlertCircle, Clock, CalendarPlus, CheckSquare, ClipboardCheck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, CheckCircle, XCircle, Plus, Building2, AlertCircle, CalendarPlus, ClipboardCheck } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { bookingService } from '../../services/bookingService';
-import type { Booking, BookingStatus } from '../../types';
-import { format, parseISO, startOfWeek, endOfWeek, addWeeks, subWeeks, isSameWeek, eachDayOfInterval, isWithinInterval } from 'date-fns';
+import type { Booking } from '../../types';
+import { format, parseISO, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isWithinInterval } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { BookingCard } from '../../components/common/BookingCard';
 import { Button } from '../../components/common/Button';
@@ -113,9 +113,15 @@ export const BookingsPage: React.FC = () => {
     }, [bookings, pendingRequests, weekStart, weekEnd, halls]);
 
     const handleStatClick = (type: string) => {
-        if (type === 'PENDING') {
-            pendingSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        } else if (type === 'THIS_WEEK') { // Show all for available too, or maybe implement available filter later?
+        // if (type === 'PENDING') {
+        //     pendingSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // } else if (type === 'THIS_WEEK') { // Show all for available too, or maybe implement available filter later?
+        //     setStatusFilter('ALL');
+        // } else {
+        //     setStatusFilter(type as StatusFilterType);
+        // }
+
+        if (type === 'THIS_WEEK') { // Show all for available too, or maybe implement available filter later?
             setStatusFilter('ALL');
         } else {
             setStatusFilter(type as StatusFilterType);
@@ -286,7 +292,7 @@ export const BookingsPage: React.FC = () => {
             </div>
 
             {/* Pending Requests Section */}
-            {pendingRequests.length > 0 && (
+            {/* {pendingRequests.length > 0 && (
                 <div ref={pendingSectionRef} className="section-container">
                     <div className="section-header">
                         <h2 className="section-title">
@@ -313,7 +319,7 @@ export const BookingsPage: React.FC = () => {
                         </div>
                     </div>
                 </div>
-            )}
+            )} */}
 
             {/* Weekly Grid Section */}
             <div className="section-container">
