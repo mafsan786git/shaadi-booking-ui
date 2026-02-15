@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Calendar, CheckCircle, XCircle, Plus, Buildi
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { bookingService } from '../../services/bookingService';
 import type { Booking } from '../../types';
-import { format, parseISO, startOfWeek, endOfWeek, addWeeks, subWeeks, eachDayOfInterval, isWithinInterval } from 'date-fns';
+import { format, parseISO, eachDayOfInterval, isWithinInterval, startOfDay, isBefore, addDays } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import { BookingCard } from '../../components/common/BookingCard';
 
@@ -18,7 +18,7 @@ export const BookingsPage: React.FC = () => {
 
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [isLoadingBookings, setIsLoadingBookings] = useState(false);
-    const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 })); // Monday start
+    const [currentWeekStart, setCurrentWeekStart] = useState(startOfDay(new Date())); // Start from today
     const [statusFilter, setStatusFilter] = useState<StatusFilterType>('ALL');
     const [isHallDropdownOpen, setIsHallDropdownOpen] = useState(false);
 
@@ -47,11 +47,11 @@ export const BookingsPage: React.FC = () => {
     }, [currentWeekStart, searchParams.get('refresh')]);
 
     const handleWeekChange = (direction: 'prev' | 'next') => {
-        setCurrentWeekStart(prev => direction === 'prev' ? subWeeks(prev, 1) : addWeeks(prev, 1));
+        setCurrentWeekStart(prev => direction === 'prev' ? addDays(prev, -7) : addDays(prev, 7));
     };
 
-    const weekStart = startOfWeek(currentWeekStart, { weekStartsOn: 1 });
-    const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
+    const weekStart = currentWeekStart;
+    const weekEnd = addDays(currentWeekStart, 6);
 
     // --- Computed Data ---
 
@@ -74,9 +74,18 @@ export const BookingsPage: React.FC = () => {
         // For "This Week", we calculate based on the current week start
         const thisWeekCount = bookings.filter(b => {
             if (!b.startDate) return false;
+            if (!['REQUESTED', 'OWNER_RESPONDED', 'CONFIRMED', 'COMPLETED'].includes(b.status)) return false;
+
             try {
                 const start = parseISO(b.startDate);
-                return start >= weekStart && start <= weekEnd;
+                const end = b.endDate ? parseISO(b.endDate) : start;
+
+                // Check if any part of the booking overlaps with the current week
+                return (
+                    (start >= weekStart && start <= weekEnd) ||
+                    (end >= weekStart && end <= weekEnd) ||
+                    (start <= weekStart && end >= weekEnd)
+                );
             } catch { return false; }
         }).length;
 
@@ -85,10 +94,15 @@ export const BookingsPage: React.FC = () => {
         if (halls.length > 0) {
             const daysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
+            const today = startOfDay(new Date());
+
             // Total slots = days * halls
             // Subtract slots that are booked
 
             daysInWeek.forEach(day => {
+                // Skip past days (even in current week)
+                if (isBefore(day, today)) return;
+
                 halls.forEach(hall => {
                     // Check if this hall is booked on this day
                     const isBooked = bookings.some(b => {
