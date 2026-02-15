@@ -244,7 +244,7 @@ export const BookingsPage: React.FC = () => {
                             className="hall-dropdown-menu"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="dropdown-header">Select Hall</div>
+                            {/* <div className="dropdown-header">Select Hall</div> */}
                             {halls.map(hall => (
                                 <div
                                     key={hall.hallId}
