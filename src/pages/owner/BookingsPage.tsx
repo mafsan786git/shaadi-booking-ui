@@ -71,7 +71,7 @@ export const BookingsPage: React.FC = () => {
         const confirmed = confirmedBookings.length;
         const pending = pendingRequests.length;
         const completed = bookings.filter(b => b.status === 'COMPLETED').length;
-        const cancelled = bookings.filter(b => ['CANCELLED_BY_OWNER', 'CANCELLED_BY_CUSTOMER', 'DECLINED_BY_OWNER', 'REJECTED_BY_CUSTOMER'].includes(b.status)).length;
+        const cancelled = bookings.filter(b => ['CANCELLED', 'REJECTED'].includes(b.status)).length;
 
         // For "This Week", we calculate based on the current week start
         const thisWeekCount = bookings.filter(b => {
@@ -175,10 +175,22 @@ export const BookingsPage: React.FC = () => {
             if (statusFilter === 'PENDING') return b.status === 'REQUESTED' || b.status === 'OWNER_RESPONDED';
             if (statusFilter === 'CONFIRMED') return b.status === 'CONFIRMED';
             if (statusFilter === 'COMPLETED') return b.status === 'COMPLETED';
-            if (statusFilter === 'CANCELLED') return b.status === 'CANCELLED_BY_OWNER' || b.status === 'CANCELLED_BY_CUSTOMER' || b.status === 'DECLINED_BY_OWNER' || b.status === 'REJECTED_BY_CUSTOMER';
+            if (statusFilter === 'CANCELLED') return b.status === 'CANCELLED' || b.status === 'REJECTED';
 
             return true;
-        }).sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+        }).sort((a, b) => {
+            // Sort logic: 'ALL' filter special handling
+            if (statusFilter === 'ALL') {
+                const isCancelledA = ['CANCELLED', 'REJECTED'].includes(a.status);
+                const isCancelledB = ['CANCELLED', 'REJECTED'].includes(b.status);
+
+                if (isCancelledA && !isCancelledB) return 1; // A is cancelled, put at bottom
+                if (!isCancelledA && isCancelledB) return -1; // B is cancelled, put at bottom
+            }
+
+            // Secondary sort (or primary for other filters): Date
+            return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+        });
     }, [bookings, weekStart, weekEnd, statusFilter]);
 
     // Old handleRequestBooking removed
