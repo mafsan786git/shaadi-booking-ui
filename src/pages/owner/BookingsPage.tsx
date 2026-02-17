@@ -390,11 +390,13 @@ export const BookingsPage: React.FC = () => {
                         customerNote: selectedBooking.customerNote,
                         ownerNote: selectedBooking.ownerNote,
                         finalPrice: selectedBooking.finalPrice,
+                        status: selectedBooking.status,
                     }}
                     mode="OWNER"
                     hallId={selectedBooking.hallId}
                     readOnly={true}
                     allowEdit={selectedBooking.endDate ? !isBefore(parseISO(selectedBooking.endDate), startOfDay(new Date())) : true}
+                    bookingId={selectedBooking.id}
                 />
             )}
 

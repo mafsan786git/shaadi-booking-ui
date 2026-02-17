@@ -43,6 +43,7 @@ export const HallAvailabilityPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalReadOnly, setIsModalReadOnly] = useState(false);
   const [bookingInitialData, setBookingInitialData] = useState<Partial<BookingRequest>>({});
+  const [activeBookingId, setActiveBookingId] = useState<string | undefined>(undefined);
   const [monthBookings, setMonthBookings] = useState<Booking[]>([]);
 
   useEffect(() => {
@@ -167,6 +168,7 @@ export const HallAvailabilityPage: React.FC = () => {
     setBookingInitialData({
       startDate: format(date, 'yyyy-MM-dd'),
     });
+    setActiveBookingId(undefined);
     setIsModalReadOnly(false);
     setIsModalOpen(true);
   };
@@ -186,6 +188,7 @@ export const HallAvailabilityPage: React.FC = () => {
   };
 
   const handleEditBooking = (booking: Booking) => {
+    setActiveBookingId(booking.id);
     setBookingInitialData({
       customerName: booking.customerName,
       customerPhone: booking.customerPhone,
@@ -195,8 +198,9 @@ export const HallAvailabilityPage: React.FC = () => {
       totalGuest: booking.totalGuest,
       customerNote: booking.customerNote,
       ownerNote: booking.ownerNote,
-      finalPrice: booking.finalPrice,
       status: booking.status,
+      finalPrice: booking.finalPrice,
+
     });
     setIsModalReadOnly(true);
     setIsModalOpen(true);
@@ -285,6 +289,7 @@ export const HallAvailabilityPage: React.FC = () => {
         hallId={selectedHallId || ''}
         readOnly={isModalReadOnly}
         allowEdit={bookingInitialData.endDate ? !isBefore(parseISO(bookingInitialData.endDate), startOfDay(new Date())) : true}
+        bookingId={activeBookingId}
       />
 
       <style>{`

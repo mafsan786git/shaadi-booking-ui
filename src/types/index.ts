@@ -61,7 +61,7 @@ export interface Hall {
 
 export type HallStatus = 'ACTIVE' | 'INACTIVE' | 'DELETED';
 
-export type BookingStatus = 'REQUESTED' | 'OWNER_RESPONDED' | 'CONFIRMED' | 'CANCELLED_BY_OWNER' | 'CANCELLED_BY_CUSTOMER' | 'DECLINED_BY_OWNER' | 'REJECTED_BY_CUSTOMER' | 'EXPIRED' | 'COMPLETED';
+export type BookingStatus = 'REQUESTED' | 'OWNER_RESPONDED' | 'CONFIRMED' | 'COMPLETED' | 'REJECTED' | 'CANCELLED';
 
 export type EventType = 'WEDDING' | 'RECEPTION' | 'ENGAGEMENT' | 'BIRTHDAY' | 'ANNIVERSARY' | 'OTHER';
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar as CalendarIcon, Users, Phone, User, FileText, IndianRupee } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import type { BookingRequest, EventType } from '../../types';
+import type { BookingRequest, EventType, BookingStatus } from '../../types';
 import { bookingService } from '../../services/bookingService';
 import { hallService } from '../../services/hallService';
 import type { Hall, DayAvailabilityResponse } from '../../types';
@@ -17,6 +17,7 @@ interface BookingModalProps {
     hallId: string;
     readOnly?: boolean;
     allowEdit?: boolean;
+    bookingId?: string;
 }
 
 const EVENT_TYPE_LABELS: Record<EventType, string> = {
@@ -38,7 +39,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     mode,
     hallId,
     readOnly = false,
-    allowEdit = true
+    allowEdit = true,
+    bookingId
 }) => {
     const today = format(new Date(), 'yyyy-MM-dd');
     const [loading, setLoading] = useState(false);
@@ -52,6 +54,29 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         totalGuest: 100,
         ...initialData
     });
+
+    const getAvailableStatuses = (currentStatus?: BookingStatus): BookingStatus[] => {
+        if (!currentStatus) return ['REQUESTED'];
+
+        // Owner Logic
+        if (mode === 'OWNER') {
+            switch (currentStatus) {
+                case 'REQUESTED':
+                    return ['REQUESTED', 'OWNER_RESPONDED', 'REJECTED', 'CONFIRMED'];
+                case 'OWNER_RESPONDED':
+                    return ['OWNER_RESPONDED', 'CONFIRMED', 'REJECTED'];
+                case 'CONFIRMED':
+                    return ['CONFIRMED', 'COMPLETED', 'CANCELLED'];
+                case 'COMPLETED':
+                case 'CANCELLED':
+                case 'REJECTED':
+                    return [currentStatus]; // Terminal states
+                default:
+                    return [currentStatus];
+            }
+        }
+        return [currentStatus];
+    };
 
     useEffect(() => {
         if (isOpen) {
@@ -71,6 +96,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 status: mode === 'OWNER' ? 'CONFIRMED' : undefined,
                 ...finalInitialData
             });
+            // If editing an existing booking, ensure status is set from initialData
+            if (bookingId && initialData?.status) {
+                setFormData(prev => ({ ...prev, status: initialData.status }));
+            }
+
             fetchData();
         } else {
             document.body.style.overflow = 'unset';
@@ -167,16 +197,22 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 eventType: formData.eventType as EventType,
                 totalGuest: Number(formData.totalGuest),
                 customerNote: formData.customerNote,
-                requirements: formData.requirements || [],
+
                 // Owner specific fields
                 ...(mode === 'OWNER' && {
                     finalPrice: formData.finalPrice ? Number(formData.finalPrice) : undefined,
-                    ownerNote: formData.ownerNote
+                    ownerNote: formData.ownerNote,
+                    status: formData.status
                 })
             };
 
-            await bookingService.requestBooking(request);
-            toast.success('Booking saved successfully!');
+            if (bookingId) {
+                await bookingService.updateBooking(bookingId, request);
+                toast.success('Booking updated successfully!');
+            } else {
+                await bookingService.requestBooking(request);
+                toast.success('Booking saved successfully!');
+            }
             onSuccess();
             onClose();
         } catch (error: any) {
@@ -325,6 +361,24 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                                     disabled={!isEditing}
                                 />
                             </div>
+
+                            {/* Status - Only for Owner and when editing existing booking */}
+                            {mode === 'OWNER' && bookingId && (
+                                <div className="form-group">
+                                    <label>Status</label>
+                                    <select
+                                        value={formData.status}
+                                        onChange={e => handleChange('status', e.target.value)}
+                                        disabled={!isEditing || ['COMPLETED', 'CANCELLED', 'REJECTED'].includes(initialData?.status as string)}
+                                    >
+                                        {getAvailableStatuses(initialData?.status).map(status => (
+                                            <option key={status} value={status}>
+                                                {status.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
                         </div>
 
                         {/* Requirements */}
