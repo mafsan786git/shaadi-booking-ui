@@ -218,6 +218,14 @@ export const HallAvailabilityPage: React.FC = () => {
     const e = format(parseISO(b.endDate), 'yyyy-MM-dd');
     const curr = format(selectedDate, 'yyyy-MM-dd');
     return curr >= s && curr <= e;
+  }).sort((a, b) => {
+    const isCancelledA = ['CANCELLED', 'REJECTED'].includes(a.status);
+    const isCancelledB = ['CANCELLED', 'REJECTED'].includes(b.status);
+
+    if (isCancelledA && !isCancelledB) return 1;
+    if (!isCancelledA && isCancelledB) return -1;
+
+    return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
   });
 
   const selectedDayData = monthAvailability.find((d: any) => d?.date && isSameDay(parseISO(d.date), selectedDate));
