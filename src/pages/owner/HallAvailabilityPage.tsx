@@ -206,6 +206,29 @@ export const HallAvailabilityPage: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const handleDeleteBooking = async (bookingId: string) => {
+    if (window.confirm('Are you sure you want to delete this booking? This action cannot be undone.')) {
+      setLoading(true); // Reusing page loading state or could add specific one
+      try {
+        await bookingService.deleteBooking(bookingId);
+        toast.success('Booking deleted successfully');
+
+        // Refresh Current Month Data
+        const monthStr = format(currentMonth, 'yyyy-MM');
+        await Promise.all([
+          fetchAvailability(selectedHallId!, monthStr, true),
+          bookingService.getBookingsForMonth(selectedHallId!, monthStr).then(bookings => setMonthBookings(bookings))
+        ]);
+
+      } catch (error) {
+        console.error('Failed to delete booking:', error);
+        toast.error('Failed to delete booking');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   if (!hall && !loading) return <div className="container">Hall not found</div>;
 
   const currentMonthStr = format(currentMonth, 'yyyy-MM');
@@ -281,6 +304,7 @@ export const HallAvailabilityPage: React.FC = () => {
             selectedBookingId={selectedDayBookings[0]?.id}
             onDirectBooking={handleDirectBooking}
             onEditBooking={handleEditBooking}
+            onDeleteBooking={handleDeleteBooking}
           />
 
         </div>

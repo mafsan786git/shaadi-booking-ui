@@ -9,6 +9,7 @@ interface BookingCardProps {
     onClick?: () => void;
     onViewClick?: (e: React.MouseEvent) => void;
     showHallName?: boolean;
+    onDeleteClick?: () => void;
 }
 
 export const BookingCard: React.FC<BookingCardProps> = ({
@@ -16,8 +17,10 @@ export const BookingCard: React.FC<BookingCardProps> = ({
     isSelected,
     onClick,
     onViewClick,
+    onDeleteClick,
     showHallName = false
 }) => {
+    const isDeletable = ['REJECTED', 'CANCELLED'].includes(booking.status);
     /* Helper to format any enum-like string (First letter capital, rest small) */
     const formatEnum = (value: string) => {
         if (!value) return '';
@@ -62,7 +65,18 @@ export const BookingCard: React.FC<BookingCardProps> = ({
                     )}
                 </div>
 
-                {onViewClick && (
+                {isDeletable && onDeleteClick ? (
+                    <button
+                        className="delete-btn"
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteClick();
+                        }}
+                    >
+                        Delete
+                    </button>
+                ) : onViewClick && (
                     <button
                         className="view-btn"
                         type="button"
@@ -179,6 +193,22 @@ export const BookingCard: React.FC<BookingCardProps> = ({
         .view-btn:hover {
           color: #1d4ed8;
           background: #eff6ff;
+        }
+
+        .delete-btn {
+          background: #dc2626;
+          border: none;
+          color: #ffffff;
+          font-size: 0.75rem;
+          font-weight: 600;
+          cursor: pointer;
+          padding: 4px 8px;
+          border-radius: 4px;
+          transition: all 0.2s;
+        }
+        .delete-btn:hover {
+          color: #b91c1c;
+          background: #fee2e2;
         }
 
         .bc-middle {

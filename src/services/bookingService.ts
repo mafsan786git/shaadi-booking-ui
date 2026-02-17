@@ -21,5 +21,9 @@ export const bookingService = {
     updateBooking: async (id: string, request: BookingRequest): Promise<Booking> => {
         const response = await api.put(`/booking/${id}`, request);
         return response.data;
+    },
+
+    deleteBooking: async (id: string): Promise<void> => {
+        await api.delete(`/booking/${id}`);
     }
 };

@@ -13,6 +13,7 @@ interface DayDetailsPanelProps {
   selectedBookingId?: string;
   onDirectBooking: (date: Date) => void;
   onEditBooking?: (booking: Booking) => void;
+  onDeleteBooking?: (bookingId: string) => void;
 }
 
 export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
@@ -22,7 +23,8 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
   bookings = [],
   selectedBookingId,
   onDirectBooking,
-  onEditBooking
+  onEditBooking,
+  onDeleteBooking
 }) => {
   // Shorter date format: "Wed, 29 Jan 2026"
   const formattedDate = format(selectedDate, 'EEE, dd MMM yyyy');
@@ -64,6 +66,7 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
                 isSelected={isSelected}
                 onClick={() => onEditBooking?.(booking)}
                 onViewClick={() => onEditBooking?.(booking)}
+                onDeleteClick={() => onDeleteBooking?.(booking.id)}
               />
             );
           })}

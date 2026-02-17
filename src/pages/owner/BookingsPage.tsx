@@ -155,6 +155,20 @@ export const BookingsPage: React.FC = () => {
         }
     };
 
+    const handleDeleteBooking = async (bookingId: string) => {
+        try {
+            await bookingService.deleteBooking(bookingId);
+            toast.success('Booking deleted successfully');
+            // Refresh data
+            const formattedDate = format(currentWeekStart, 'yyyy-MM-dd');
+            const allBookings = await bookingService.getAllBookings(formattedDate);
+            setBookings(allBookings);
+        } catch (error) {
+            console.error('Failed to delete booking:', error);
+            toast.error('Failed to delete booking');
+        }
+    };
+
     // 3. Weekly Grid Bookings (Filtered by Week AND Status Filter)
     const weeklyGridBookings = useMemo(() => {
         return bookings.filter(b => {
@@ -371,6 +385,7 @@ export const BookingsPage: React.FC = () => {
                                     setSelectedBooking(booking);
                                     setIsModalOpen(true);
                                 }}
+                                onDeleteClick={() => handleDeleteBooking(booking.id)}
                             />
                         ))}
                     </div>

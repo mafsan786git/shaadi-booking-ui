@@ -223,6 +223,23 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         }
     };
 
+    const handleDelete = async () => {
+        if (!bookingId) return;
+
+        setLoading(true);
+        try {
+            await bookingService.deleteBooking(bookingId);
+            toast.success('Booking deleted successfully');
+            onSuccess();
+            onClose();
+        } catch (error) {
+            console.error('Failed to delete booking:', error);
+            toast.error('Failed to delete booking');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleChange = (field: keyof BookingRequest, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
@@ -452,20 +469,34 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                         <button type="button" onClick={onClose} className="btn-secondary">
                             {isEditing ? 'Cancel' : 'Close'}
                         </button>
-                        {!isEditing && readOnly && allowEdit && (
+
+                        {mode === 'OWNER' && bookingId && (initialData?.status === 'REJECTED' || initialData?.status === 'CANCELLED') ? (
                             <button
                                 type="button"
-                                onClick={() => setIsEditing(true)}
-                                className="btn-primary"
-                                style={{ background: '#2563eb' }}
+                                onClick={handleDelete}
+                                className="btn-danger"
+                                disabled={loading}
                             >
-                                Edit
+                                {loading ? 'Deleting...' : 'Delete'}
                             </button>
-                        )}
-                        {isEditing && (
-                            <button type="submit" disabled={loading} className="btn-primary">
-                                {loading ? 'Processing...' : (mode === 'OWNER' ? 'Save Booking' : 'Send Request')}
-                            </button>
+                        ) : (
+                            <>
+                                {!isEditing && readOnly && allowEdit && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsEditing(true)}
+                                        className="btn-primary"
+                                        style={{ background: '#2563eb' }}
+                                    >
+                                        Edit
+                                    </button>
+                                )}
+                                {isEditing && (
+                                    <button type="submit" disabled={loading} className="btn-primary">
+                                        {loading ? 'Processing...' : (mode === 'OWNER' ? 'Save Booking' : 'Send Request')}
+                                    </button>
+                                )}
+                            </>
                         )}
                     </div>
                 </form>
@@ -664,6 +695,28 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     transform: none;
                 }
 
+                .btn-danger {
+                    padding: 0.75rem 1.5rem;
+                    background: #dc2626;
+                    border: none;
+                    color: white;
+                    border-radius: 8px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.3);
+                }
+                .btn-danger:hover {
+                    background: #b91c1c;
+                    transform: translateY(-1px);
+                    box-shadow: 0 6px 8px -1px rgba(220, 38, 38, 0.4);
+                }
+                .btn-danger:disabled {
+                    opacity: 0.7;
+                    cursor: not-allowed;
+                    transform: none;
+                }
+
                 @keyframes fadeIn {
                     from { opacity: 0; }
                     to { opacity: 1; }
@@ -704,7 +757,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                         border-top: 1px solid #e2e8f0;
                         margin-top: auto;
                     }
-                    .btn-primary, .btn-secondary {
+                    .btn-primary, .btn-secondary, .btn-danger{
                         flex: 1;
                         padding: 0.8rem;
                         font-size: 0.9rem;
