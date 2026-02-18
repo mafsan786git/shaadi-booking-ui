@@ -140,16 +140,21 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
                 ${!isCurrentMonth ? 'outside-month' : ''} 
                 ${isSelected && isCurrentMonth ? 'selected' : ''} 
                 ${isToday && isCurrentMonth ? 'today' : ''} 
-                ${isCurrentMonth ? `status-${status.toLowerCase()}` : ''}
+                ${isCurrentMonth ? `status-${status.toLowerCase().replace('confrimed', 'confirmed')}` : ''}
                 ${isPast && isCurrentMonth ? 'past' : ''}
                 ${!isClickable ? 'not-clickable' : ''}
               `}
               onClick={() => isClickable && onDateSelect(date)}
             >
               <span className="day-number">{format(date, 'd')}</span>
-              {isCurrentMonth && status !== 'AVAILABLE' && (
+              {isCurrentMonth && (status !== 'AVAILABLE' || isToday) && (
                 <div className="status-dot-container">
-                  <div className={`status-dot ${status.toLowerCase()}`} />
+                  {status !== 'AVAILABLE' && (
+                    <div className={`status-dot ${status.toLowerCase().replace('confrimed', 'confirmed')}`} />
+                  )}
+                  {isToday && !isSelected && (
+                    <div className="status-dot today-dot" />
+                  )}
                 </div>
               )}
             </div>
@@ -277,15 +282,6 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
           color: #2563eb;
           font-weight: 800;
         }
-        .calendar-day.today:not(.selected)::after {
-          content: '';
-          position: absolute;
-          bottom: 4px;
-          width: 4px;
-          height: 4px;
-          background: #2563eb;
-          border-radius: 50%;
-        }
         .day-number {
           font-size: 0.95rem;
           z-index: 1;
@@ -301,15 +297,16 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
           height: 6px;
           border-radius: 50%;
         }
-        .status-dot.confrimed { background: #ef4444; }
-        .status-dot.blocked { background: #94a3b8; }
-        .status-dot.in_progress { background: #f59e0b; }
-        .status-dot.available { background: #22c55e; }
+        .status-dot.confirmed { background: #166534; }
+        .status-dot.blocked { background: #94A3B8; }
+        .status-dot.in_progress { background: #F59E0B; }
+        .status-dot.available { background: #3B82F6; }
+        .status-dot.today-dot { background: #2563eb; }
 
-        .status-confrimed:not(.selected) { background: #fef2f2; color: #991b1b; }
+        .status-confirmed:not(.selected) { background: #f0fdf4; color: #166534; }
         .status-blocked:not(.selected) { background: #f8fafc; color: #64748b; }
         .status-in_progress:not(.selected) { background: #fff7ed; color: #9a3412; }
-        .status-available:not(.selected) { background: #f0fdf4; color: #166534; }
+        .status-available:not(.selected) { background: #eff6ff; color: #1e40af; }
 
         /* Past date styling - applied to ALL past dates */
         .calendar-day.past:not(.selected) {

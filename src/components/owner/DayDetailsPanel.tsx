@@ -49,7 +49,7 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
       {/* 1. Header Card */}
       <div className="detail-card header-card">
         <h3 className="panel-title">{formattedDate}</h3>
-        <span className={`status-pill ${status.toLowerCase()}`}>
+        <span className={`status-pill ${status.toLowerCase().replace('confrimed', 'confirmed')}`}>
           {formatStatus(status)}
         </span>
       </div>
@@ -145,11 +145,11 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
           font-weight: 600;
           text-transform: capitalize;
         }
-        .status-pill.available { background: #f0fdf4; color: #166534; border: 1px solid #dcfce7; }
+        .status-pill.available { background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; }
         .status-pill.booked { background: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; }
         .status-pill.blocked { background: #f8fafc; color: #64748b; border: 1px solid #f1f5f9; }
         .status-pill.in_progress { background: #fff7ed; color: #9a3412; border: 1px solid #ffedd5; }
-        .status-pill.confrimed { background: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; }
+        .status-pill.confirmed { background: #f0fdf4; color: #166534; border: 1px solid #dcfce7; }
 
         /* Booking Card Refined Minimal Layout */
         .booking-card {

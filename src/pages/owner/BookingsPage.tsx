@@ -235,9 +235,9 @@ export const BookingsPage: React.FC = () => {
                 <div className="stat-card clickable" onClick={() => handleStatClick('THIS_WEEK')}>
                     <div>
                         <p className="stat-label">This Week</p>
-                        <p className="stat-value text-blue">{stats.thisWeekCount}</p>
+                        <p className="stat-value text-blue-600">{stats.thisWeekCount}</p>
                     </div>
-                    <div className="stat-icon-small text-blue">
+                    <div className="stat-icon-small text-blue-600">
                         <Calendar size={16} />
                     </div>
                 </div>
@@ -246,9 +246,9 @@ export const BookingsPage: React.FC = () => {
                 <div className="stat-card clickable" onClick={() => handleStatClick('CONFIRMED')}>
                     <div>
                         <p className="stat-label">Confirmed</p>
-                        <p className="stat-value text-emerald">{stats.confirmed}</p>
+                        <p className="stat-value text-status-confirmed">{stats.confirmed}</p>
                     </div>
-                    <div className="stat-icon-small text-emerald">
+                    <div className="stat-icon-small text-status-confirmed">
                         <CheckCircle size={16} />
                     </div>
                 </div>
@@ -274,9 +274,9 @@ export const BookingsPage: React.FC = () => {
                 >
                     <div>
                         <p className="stat-label">Available</p>
-                        <p className="stat-value text-emerald">{stats.availableSlots}</p>
+                        <p className="stat-value text-status-available">{stats.availableSlots}</p>
                     </div>
-                    <div className="stat-icon-small text-emerald">
+                    <div className="stat-icon-small text-status-available">
                         <CalendarPlus size={16} />
                     </div>
 
@@ -305,9 +305,9 @@ export const BookingsPage: React.FC = () => {
                 <div className="stat-card clickable" onClick={() => handleStatClick('COMPLETED')}>
                     <div>
                         <p className="stat-label">Completed</p>
-                        <p className="stat-value text-gray">{stats.completed}</p>
+                        <p className="stat-value text-status-completed">{stats.completed}</p>
                     </div>
-                    <div className="stat-icon-small text-gray">
+                    <div className="stat-icon-small text-status-completed">
                         <ClipboardCheck size={16} />
                     </div>
                 </div>
@@ -609,20 +609,23 @@ export const BookingsPage: React.FC = () => {
                     opacity: 0.8;
                 }
 
-                .stat-value.text-amber { color: #d97706; }
-                .stat-icon-small.text-amber { color: #d97706; }
+                .stat-value.text-blue-600 { color: #2563eb; }
+                .stat-icon-small.text-blue-600 { color: #2563eb; }
                 
-                .stat-value.text-emerald { color: #059669; }
-                .stat-icon-small.text-emerald { color: #059669; }
+                .stat-value.text-status-confirmed { color: #166534; }
+                .stat-icon-small.text-status-confirmed { color: #166534; }
 
-                .stat-value.text-blue { color: #2563eb; }
-                .stat-icon-small.text-blue { color: #2563eb; }
+                .stat-value.text-status-available { color: var(--color-status-available); }
+                .stat-icon-small.text-status-available { color: var(--color-status-available); }
                 
-                .stat-value.text-gray { color: #4b5563; }
-                .stat-icon-small.text-gray { color: #4b5563; }
+                .stat-value.text-status-completed { color: var(--color-status-completed); }
+                .stat-icon-small.text-status-completed { color: var(--color-status-completed); }
                 
-                .stat-value.text-red { color: #dc2626; }
-                .stat-icon-small.text-red { color: #dc2626; }
+                .stat-value.text-amber { color: var(--color-status-pending); }
+                .stat-icon-small.text-amber { color: var(--color-status-pending); }
+                
+                .stat-value.text-red { color: var(--color-status-error); }
+                .stat-icon-small.text-red { color: var(--color-status-error); }
 
 
                 /* Sections */
@@ -654,8 +657,8 @@ export const BookingsPage: React.FC = () => {
                     display: block;
                 }
                 
-                .indicator.bg-amber { background: #f59e0b; }
-                .indicator.bg-blue { background: #3b82f6; }
+                .indicator.bg-amber { background: var(--color-status-pending); }
+                .indicator.bg-blue { background: var(--color-status-available); }
 
                 .badge {
                     font-size: 0.75rem;
@@ -766,25 +769,25 @@ export const BookingsPage: React.FC = () => {
                 }
                 
                 .filter-btn.active-pending {
-                    background: #d97706;
+                    background: var(--color-status-pending);
                     color: white;
                     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
                 }
                 
                 .filter-btn.active-confirmed {
-                    background: #059669;
+                    background: var(--color-status-confirmed);
                     color: white;
                     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
                 }
                 
                 .filter-btn.active-completed {
-                    background: #4b5563;
+                    background: var(--color-status-completed);
                     color: white;
                     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
                 }
                 
                 .filter-btn.active-cancelled {
-                    background: #dc2626;
+                    background: var(--color-status-error);
                     color: white;
                     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
                 }

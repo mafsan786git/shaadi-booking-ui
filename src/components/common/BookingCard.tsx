@@ -33,16 +33,20 @@ export const BookingCard: React.FC<BookingCardProps> = ({
     /* Helper to get color for booking status */
     const getBookingStatusStyle = (status: string) => {
         switch (status) {
-            case 'CONFIRMED': return { color: '#16a34a', bg: '#dcfce7' }; // Green
-            case 'REQUESTED': return { color: '#d97706', bg: '#fef3c7' }; // Amber
-            case 'OWNER_RESPONDED': return { color: '#2563eb', bg: '#dbeafe' }; // Blue
+            case 'CONFIRMED': return { color: '#166534', bg: '#f0fdf4' }; // Green
+            case 'REQUESTED':
+            case 'OWNER_RESPONDED':
+                return { color: '#F59E0B', bg: '#fff7ed' }; // Amber
+            case 'COMPLETED': return { color: '#8B5CF6', bg: '#f5f3ff' }; // Purple
             case 'CANCELLED_BY_OWNER':
             case 'CANCELLED_BY_CUSTOMER':
             case 'DECLINED_BY_OWNER':
             case 'REJECTED_BY_CUSTOMER':
+            case 'CANCELLED':
+            case 'REJECTED':
             case 'EXPIRED':
-                return { color: '#dc2626', bg: '#fee2e2' }; // Red
-            default: return { color: '#475569', bg: '#f1f5f9' }; // Slate
+                return { color: '#EF4444', bg: '#fef2f2' }; // Red
+            default: return { color: '#94A3B8', bg: '#f8fafc' }; // Slate (Blocked/Default)
         }
     };
 
