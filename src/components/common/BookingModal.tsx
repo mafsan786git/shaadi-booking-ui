@@ -170,7 +170,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 if (formData.startDate !== initialData?.startDate) {
                     const isUnavailable = availability.some(d =>
                         d.date === formData.startDate &&
-                        (d.status === 'BLOCKED' || d.status === 'CONFRIMED' || d.status === 'IN_PROGRESS')
+                        (d.status === 'BLOCKED' || d.status === 'CONFIRMED' || d.status === 'IN_PROGRESS')
                     );
                     if (isUnavailable) {
                         notificationService.error('Selected date is not available');

@@ -2,6 +2,7 @@ import React from 'react';
 import { format, parseISO } from 'date-fns';
 import { Calendar } from 'lucide-react';
 import type { Booking } from '../../types';
+import { formatEnum } from '../../utils/formatters';
 
 interface BookingCardProps {
     booking: Booking;
@@ -21,14 +22,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
     showHallName = false
 }) => {
     const isDeletable = ['REJECTED', 'CANCELLED'].includes(booking.status);
-    /* Helper to format any enum-like string (First letter capital, rest small) */
-    const formatEnum = (value: string) => {
-        if (!value) return '';
-        return value
-            .split('_')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-            .join(' ');
-    };
+    /* Helper to format any enum-like string (First letter capital, rest small) moved to utils */
 
     /* Helper to get color for booking status */
     const getBookingStatusStyle = (status: string) => {

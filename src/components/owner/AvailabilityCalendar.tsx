@@ -140,7 +140,7 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
                 ${!isCurrentMonth ? 'outside-month' : ''} 
                 ${isSelected && isCurrentMonth ? 'selected' : ''} 
                 ${isToday && isCurrentMonth ? 'today' : ''} 
-                ${isCurrentMonth ? `status-${status.toLowerCase().replace('confrimed', 'confirmed')}` : ''}
+                ${isCurrentMonth ? `status-${status.toLowerCase()}` : ''}
                 ${isPast && isCurrentMonth ? 'past' : ''}
                 ${!isClickable ? 'not-clickable' : ''}
               `}
@@ -150,7 +150,7 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
               {isCurrentMonth && (status !== 'AVAILABLE' || isToday) && (
                 <div className="status-dot-container">
                   {status !== 'AVAILABLE' && (
-                    <div className={`status-dot ${status.toLowerCase().replace('confrimed', 'confirmed')}`} />
+                    <div className={`status-dot ${status.toLowerCase()}`} />
                   )}
                   {isToday && !isSelected && (
                     <div className="status-dot today-dot" />

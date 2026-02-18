@@ -4,6 +4,7 @@ import { Info, Plus } from 'lucide-react';
 import type { Booking, AvailabilityStatus } from '../../types';
 import { Button } from '../common/Button';
 import { BookingCard } from '../common/BookingCard';
+import { formatEnum } from '../../utils/formatters';
 
 interface DayDetailsPanelProps {
   selectedDate: Date;
@@ -33,13 +34,7 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
   const showRequestBooking = (status === 'AVAILABLE' || status === 'IN_PROGRESS') && !isPast;
 
   const formatStatus = (s: AvailabilityStatus) => {
-    switch (s) {
-      case 'IN_PROGRESS': return 'In Progress';
-      case 'CONFRIMED': return 'Confirmed';
-      case 'AVAILABLE': return 'Available';
-      case 'BLOCKED': return 'Blocked';
-      default: return s;
-    }
+    return formatEnum(s);
   };
 
 
@@ -49,7 +44,7 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
       {/* 1. Header Card */}
       <div className="detail-card header-card">
         <h3 className="panel-title">{formattedDate}</h3>
-        <span className={`status-pill ${status.toLowerCase().replace('confrimed', 'confirmed')}`}>
+        <span className={`status-pill ${status.toLowerCase()}`}>
           {formatStatus(status)}
         </span>
       </div>
