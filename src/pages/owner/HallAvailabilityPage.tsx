@@ -138,10 +138,11 @@ export const HallAvailabilityPage: React.FC = () => {
     loadData();
   }, [selectedHallId, currentMonth, fetchAvailability, prefetchAdjacentMonths]);
 
-  const fetchHallDetails = async () => {
-    if (!selectedHallId) return;
+  const fetchHallDetails = async (id?: string) => {
+    const targetId = id || selectedHallId;
+    if (!targetId) return;
     try {
-      const data = await hallService.getHallById(selectedHallId);
+      const data = await hallService.getHallById(targetId);
       setHall(data);
     } catch (error) {
       notificationService.error('Failed to fetch hall details');
@@ -252,7 +253,10 @@ export const HallAvailabilityPage: React.FC = () => {
   });
 
   const selectedDayData = monthAvailability.find((d: any) => d?.date && isSameDay(parseISO(d.date), selectedDate));
-  const currentStatus = selectedDayData?.status || 'AVAILABLE';
+
+  // Prioritize COMPLETED status from actual bookings over raw availability
+  const hasCompletedBooking = selectedDayBookings.some(b => b.status === 'COMPLETED');
+  const currentStatus = hasCompletedBooking ? 'COMPLETED' : (selectedDayData?.status || 'AVAILABLE');
 
   const isShowingCurrentMonth = isSameMonth(currentMonth, new Date());
 
@@ -292,6 +296,7 @@ export const HallAvailabilityPage: React.FC = () => {
             selectedDate={selectedDate}
             onDateSelect={handleDateSelect}
             availabilityData={monthAvailability}
+            bookings={monthBookings}
           />
         </div>
 
@@ -320,7 +325,11 @@ export const HallAvailabilityPage: React.FC = () => {
         mode="OWNER"
         hallId={selectedHallId || ''}
         readOnly={isModalReadOnly}
-        allowEdit={bookingInitialData.endDate ? !isBefore(parseISO(bookingInitialData.endDate), startOfDay(new Date())) : true}
+        allowEdit={
+          bookingInitialData.status && ['COMPLETED', 'CANCELLED', 'REJECTED'].includes(bookingInitialData.status)
+            ? false
+            : (bookingInitialData.endDate ? !isBefore(parseISO(bookingInitialData.endDate), startOfDay(new Date())) : true)
+        }
         bookingId={activeBookingId}
       />
 

@@ -8,7 +8,7 @@ import { MainLayout } from './components/layout/MainLayout';
 import { ProfilePage } from './pages/common/ProfilePage';
 import { DashboardPage } from './pages/common/DashboardPage';
 import { HallAvailabilityPage } from './pages/owner/HallAvailabilityPage';
-import { BookingsPage } from './pages/owner/BookingsPage';
+
 import { OwnerDashboard } from './pages/owner/OwnerDashboard';
 
 import { useEffect } from 'react';

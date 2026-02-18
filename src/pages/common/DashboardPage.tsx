@@ -1,5 +1,5 @@
 import { useAuthStore } from '../../context/useAuthStore';
-import { OwnerDashboard } from '../owner/OwnerDashboard';
+
 import { BookingsPage } from '../owner/BookingsPage';
 import { UserManagementPage } from '../admin/UserManagementPage';
 import { useNavigate } from 'react-router-dom';

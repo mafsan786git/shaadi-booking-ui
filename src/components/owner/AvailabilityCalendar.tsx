@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   format,
   startOfMonth,
@@ -11,10 +11,11 @@ import {
   addMonths,
   subMonths,
   isBefore,
-  startOfDay
+  startOfDay,
+  parseISO
 } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { DayAvailabilityResponse } from '../../types';
+import type { DayAvailabilityResponse, Booking, AvailabilityStatus } from '../../types';
 
 interface AvailabilityCalendarProps {
   currentMonth: Date;
@@ -22,6 +23,7 @@ interface AvailabilityCalendarProps {
   selectedDate: Date;
   onDateSelect: (date: Date) => void;
   availabilityData: DayAvailabilityResponse[];
+  bookings?: Booking[];
 }
 
 export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
@@ -30,6 +32,7 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
   selectedDate,
   onDateSelect,
   availabilityData,
+  bookings = []
 }) => {
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(monthStart);
@@ -41,23 +44,20 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
     end: endDate,
   });
 
-  const availabilityMap = useMemo(() => {
-    const map: Record<string, string> = {};
-    if (!Array.isArray(availabilityData)) return map;
-
-    availabilityData.forEach((d) => {
-      if (d && d.date) {
-        const dateKey = d.date.split('T')[0];
-        map[dateKey] = d.status;
-      }
+  const getDayStatus = (date: Date): AvailabilityStatus => {
+    // Priority: Check if any booking on this day is COMPLETED to show forest green
+    const hasCompleted = bookings.some(b => {
+      if (b.status !== 'COMPLETED') return false;
+      const s = startOfDay(parseISO(b.startDate));
+      const e = startOfDay(parseISO(b.endDate));
+      const curr = startOfDay(date);
+      return curr >= s && curr <= e;
     });
 
-    return map;
-  }, [availabilityData]);
+    if (hasCompleted) return 'COMPLETED';
 
-  const getDayStatus = (date: Date) => {
-    const calendarDateStr = format(date, 'yyyy-MM-dd');
-    return availabilityMap[calendarDateStr] || 'AVAILABLE';
+    const dayData = availabilityData.find(d => isSameDay(parseISO(d.date), date));
+    return dayData?.status || 'AVAILABLE';
   };
 
   const handlePrevMonth = () => onMonthChange(subMonths(currentMonth, 1));
@@ -305,6 +305,7 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
 
         .status-confirmed:not(.selected) { background: #f0fdf4; color: #166534; }
         .status-completed:not(.selected) { background: #166534; color: white; }
+        .status-completed:not(.selected) .day-number { color: white; }
         .status-dot.confirmed { background: #166534; }
         .status-blocked:not(.selected) { background: #f8fafc; color: #64748b; }
         .status-in_progress:not(.selected) { background: #fff7ed; color: #9a3412; }
