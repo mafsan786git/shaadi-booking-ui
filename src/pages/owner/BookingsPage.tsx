@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { bookingService } from '../../services/bookingService';
 import type { Booking } from '../../types';
 import { format, parseISO, eachDayOfInterval, isWithinInterval, startOfDay, isBefore, addDays } from 'date-fns';
-import { toast } from 'react-hot-toast';
+import { notificationService } from '../../services/notificationService';
 import { BookingCard } from '../../components/common/BookingCard';
 import { BookingModal } from '../../components/common/BookingModal';
 
@@ -40,7 +40,7 @@ export const BookingsPage: React.FC = () => {
                 }
             } catch (error) {
                 console.error("Failed to fetch data", error);
-                toast.error("Failed to load dashboard data");
+                notificationService.error("Failed to load dashboard data");
             } finally {
                 setIsLoadingBookings(false);
             }
@@ -158,14 +158,14 @@ export const BookingsPage: React.FC = () => {
     const handleDeleteBooking = async (bookingId: string) => {
         try {
             await bookingService.deleteBooking(bookingId);
-            toast.success('Booking deleted successfully');
+            notificationService.success('Booking deleted successfully');
             // Refresh data
             const formattedDate = format(currentWeekStart, 'yyyy-MM-dd');
             const allBookings = await bookingService.getAllBookings(formattedDate);
             setBookings(allBookings);
         } catch (error) {
             console.error('Failed to delete booking:', error);
-            toast.error('Failed to delete booking');
+            notificationService.error('Failed to delete booking');
         }
     };
 

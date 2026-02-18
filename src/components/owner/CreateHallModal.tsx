@@ -3,7 +3,7 @@ import { X, Plus, Trash } from 'lucide-react';
 
 import type { Hall, HallRequest } from '../../types';
 import { hallService } from '../../services/hallService';
-import { toast } from 'react-hot-toast';
+import { notificationService } from '../../services/notificationService';
 import { validateMobile, sanitizeMobileInput } from '../../utils/validation';
 
 interface CreateHallModalProps {
@@ -74,7 +74,7 @@ export const CreateHallModal = ({ isOpen, onClose, onSuccess, hallToEdit, initia
         e.preventDefault();
 
         if (!validateContacts(formData.contacts)) {
-            toast.error('All contacts must be valid 10-digit phone numbers');
+            notificationService.error('All contacts must be valid 10-digit phone numbers');
             return;
         }
 
@@ -88,17 +88,17 @@ export const CreateHallModal = ({ isOpen, onClose, onSuccess, hallToEdit, initia
 
             if (hallToEdit) {
                 await hallService.updateHall(hallToEdit.hallId, submissionData);
-                toast.success('Hall updated successfully');
+                notificationService.success('Hall updated successfully');
             } else {
                 await hallService.createHall(submissionData);
-                toast.success('Hall created successfully');
+                notificationService.success('Hall created successfully');
             }
 
             setFormData(initialFormState);
             onSuccess();
             onClose();
         } catch (error) {
-            toast.error(hallToEdit ? 'Failed to update hall' : 'Failed to create hall');
+            notificationService.error(hallToEdit ? 'Failed to update hall' : 'Failed to create hall');
         } finally {
             setLoading(false);
         }
@@ -144,7 +144,7 @@ export const CreateHallModal = ({ isOpen, onClose, onSuccess, hallToEdit, initia
             <div className={`modal-content ${isViewMode ? 'view-mode' : ''}`}>
                 <div className="modal-header">
                     <h3>{isViewMode ? 'Hall Details' : (hallToEdit ? 'Edit Hall' : 'Add New Hall')}</h3>
-                        <button onClick={onClose} className="close-btn"><X size={24} /></button>
+                    <button onClick={onClose} className="close-btn"><X size={24} /></button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="modal-form">

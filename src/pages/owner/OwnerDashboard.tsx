@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useHallStore } from '../../context/useHallStore';
 import type { Hall } from '../../types';
-import { toast } from 'react-hot-toast';
+import { notificationService } from '../../services/notificationService';
 import { Plus, MapPin, Users, SlidersHorizontal } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { CreateHallModal } from '../../components/owner/CreateHallModal';
@@ -29,7 +29,7 @@ export const OwnerDashboard = () => {
         try {
             const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
             await updateHallStatus(hallId, newStatus as any);
-            toast.success(`Hall ${newStatus.toLowerCase()}d successfully`);
+            notificationService.success(`Hall ${newStatus.toLowerCase()}d successfully`);
         } catch (error) {
             // Error handled in store
         }

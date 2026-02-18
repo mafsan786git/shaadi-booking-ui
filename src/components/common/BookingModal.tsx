@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar as CalendarIcon, Users, Phone, User, FileText, IndianRupee } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { notificationService } from '../../services/notificationService';
 import type { BookingRequest, EventType, BookingStatus } from '../../types';
 import { bookingService } from '../../services/bookingService';
 import { hallService } from '../../services/hallService';
@@ -136,21 +136,21 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         try {
             // Basic validation
             if (!formData.customerName || !formData.customerPhone || !formData.startDate || !formData.totalGuest) {
-                toast.error('Please fill in all required fields');
+                notificationService.error('Please fill in all required fields');
                 setLoading(false);
                 return;
             }
 
             // Phone validation
             if (!validateMobile(formData.customerPhone)) {
-                toast.error('Please enter a valid 10-digit mobile number (starting with 1-9)');
+                notificationService.error('Please enter a valid 10-digit mobile number (starting with 1-9)');
                 setLoading(false);
                 return;
             }
 
             // Hall Capacity Validation
             if (hall && Number(formData.totalGuest) > hall.capacity) {
-                toast.error(`Total guests cannot exceed hall capacity (${hall.capacity})`);
+                notificationService.error(`Total guests cannot exceed hall capacity (${hall.capacity})`);
                 setLoading(false);
                 return;
             }
@@ -161,7 +161,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             // Ideally we should check if date is same as initialData.
             if (formData.startDate) {
                 if (formData.startDate < today) {
-                    toast.error('Cannot select a past date');
+                    notificationService.error('Cannot select a past date');
                     setLoading(false);
                     return;
                 }
@@ -173,7 +173,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                         (d.status === 'BLOCKED' || d.status === 'CONFRIMED' || d.status === 'IN_PROGRESS')
                     );
                     if (isUnavailable) {
-                        toast.error('Selected date is not available');
+                        notificationService.error('Selected date is not available');
                         setLoading(false);
                         return;
                     }
@@ -182,7 +182,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
             // End date validation
             if (formData.endDate && formData.startDate && formData.endDate < formData.startDate) {
-                toast.error('End date cannot be before start date');
+                notificationService.error('End date cannot be before start date');
                 setLoading(false);
                 return;
             }
@@ -208,16 +208,16 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
             if (bookingId) {
                 await bookingService.updateBooking(bookingId, request);
-                toast.success('Booking updated successfully!');
+                notificationService.success('Booking updated successfully!');
             } else {
                 await bookingService.requestBooking(request);
-                toast.success('Booking saved successfully!');
+                notificationService.success('Booking saved successfully!');
             }
             onSuccess();
             onClose();
         } catch (error: any) {
             console.error('Booking failed:', error);
-            toast.error(error.response?.data?.message || 'Failed to save booking');
+            notificationService.error(error.response?.data?.message || 'Failed to save booking');
         } finally {
             setLoading(false);
         }
@@ -229,12 +229,12 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         setLoading(true);
         try {
             await bookingService.deleteBooking(bookingId);
-            toast.success('Booking deleted successfully');
+            notificationService.success('Booking deleted successfully');
             onSuccess();
             onClose();
         } catch (error) {
             console.error('Failed to delete booking:', error);
-            toast.error('Failed to delete booking');
+            notificationService.error('Failed to delete booking');
         } finally {
             setLoading(false);
         }
@@ -311,7 +311,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                                     onChange={e => {
                                         const value = Number(e.target.value);
                                         if (hall && value > hall.capacity) {
-                                            toast.error(`Total guests cannot exceed hall capacity (${hall.capacity})`);
+                                            notificationService.error(`Total guests cannot exceed hall capacity (${hall.capacity})`);
                                             handleChange('totalGuest', hall.capacity);
                                             return;
                                         }
@@ -335,7 +335,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                                         // JS Guard: Prevent past dates even if picker allows it
                                         if (newDate && newDate < today) {
                                             handleChange('startDate', today);
-                                            toast.error('Cannot select a past date');
+                                            notificationService.error('Cannot select a past date');
                                             return;
                                         }
 

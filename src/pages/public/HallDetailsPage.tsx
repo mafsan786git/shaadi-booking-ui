@@ -4,7 +4,7 @@ import { hallService } from '../../services/hallService';
 import type { Hall } from '../../types';
 import { Button } from '../../components/common/Button';
 import { MapPin, Users, IndianRupee, CheckCircle, ChevronLeft } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { notificationService } from '../../services/notificationService';
 
 export const HallDetailsPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -23,7 +23,7 @@ export const HallDetailsPage = () => {
                 }
             } catch (error) {
                 console.error(error);
-                toast.error('Failed to load hall details');
+                notificationService.error('Failed to load hall details');
             } finally {
                 setIsLoading(false);
             }
@@ -129,11 +129,11 @@ export const HallDetailsPage = () => {
                                 <span className="value">₹{hall.basePrice.toLocaleString()}</span>
                             </div>
 
-                            <Button onClick={() => toast('Availability Calendar coming soon!')} style={{ width: '100%', marginBottom: '1rem' }}>
+                            <Button onClick={() => notificationService.info('Availability Calendar coming soon!')} style={{ width: '100%', marginBottom: '1rem' }}>
                                 Check Availability
                             </Button>
 
-                            <Button variant="outline" onClick={() => toast('Contact feature coming soon!')} style={{ width: '100%' }}>
+                            <Button variant="outline" onClick={() => notificationService.info('Contact feature coming soon!')} style={{ width: '100%' }}>
                                 Contact Owner
                             </Button>
 

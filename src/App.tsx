@@ -29,7 +29,18 @@ function App() {
 
   return (
     <Router>
-      <Toaster position="top-right" />
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          className: 'custom-toast',
+          success: {
+            duration: 3000,
+          },
+          error: {
+            duration: 3000,
+          },
+        }}
+      />
       <div className="app-layout">
         <Routes>
           {/* Main Layout containing Navbar & Footer for all routes */}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
+import { notificationService } from '../../services/notificationService';
 import { authService } from '../../services/authService';
 import { useAuthStore } from '../../context/useAuthStore';
 import { Input } from '../../components/common/Input';
@@ -51,14 +51,14 @@ export const AuthPage = () => {
     const handleSendOtp = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!validateMobile(phone)) {
-            toast.error('Please enter a valid 10-digit mobile number (starting with 1-9)');
+            notificationService.error('Please enter a valid 10-digit mobile number (starting with 1-9)');
             return;
         }
 
         setIsLoading(true);
         try {
             const data = await authService.initiateLogin(phone);
-            toast.success(data.message || 'OTP Sent!');
+            notificationService.success(data.message || 'OTP Sent!');
 
             if (data.retryAfter) {
                 const expiry = new Date(data.retryAfter);
@@ -70,7 +70,7 @@ export const AuthPage = () => {
 
             setStep('OTP');
         } catch (error) {
-            toast.error('Failed to send OTP. Try again.');
+            notificationService.error('Failed to send OTP. Try again.');
             console.error(error);
         } finally {
             setIsLoading(false);
@@ -83,7 +83,7 @@ export const AuthPage = () => {
         setIsLoading(true);
         try {
             const data = await authService.resendOtp(phone);
-            toast.success(data.message || 'OTP Resent!');
+            notificationService.success(data.message || 'OTP Resent!');
 
             if (data.retryAfter) {
                 const expiry = new Date(data.retryAfter);
@@ -91,7 +91,7 @@ export const AuthPage = () => {
                 setTimeLeft(Math.ceil((expiry.getTime() - new Date().getTime()) / 1000));
             }
         } catch (error) {
-            toast.error('Failed to resend OTP.');
+            notificationService.error('Failed to resend OTP.');
         } finally {
             setIsLoading(false);
         }
@@ -100,7 +100,7 @@ export const AuthPage = () => {
     const handleVerifyOtp = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!otp || otp.length < 4) {
-            toast.error('Please enter valid OTP');
+            notificationService.error('Please enter valid OTP');
             return;
         }
 
@@ -108,10 +108,10 @@ export const AuthPage = () => {
         try {
             const tokens = await authService.verifyOtp(phone, otp);
             await login(tokens);
-            toast.success('Logged in successfully!');
+            notificationService.success('Logged in successfully!');
             navigate('/dashboard');
         } catch (error) {
-            toast.error('Invalid OTP. Please try again.');
+            notificationService.error('Invalid OTP. Please try again.');
             console.error(error);
         } finally {
             setIsLoading(false);

@@ -18,7 +18,7 @@ import {
   startOfDay
 } from 'date-fns';
 import type { Hall, BookingRequest, Booking } from '../../types';
-import { toast } from 'react-hot-toast';
+import { notificationService } from '../../services/notificationService';
 import { BookingModal } from '../../components/common/BookingModal';
 
 export const HallAvailabilityPage: React.FC = () => {
@@ -130,7 +130,7 @@ export const HallAvailabilityPage: React.FC = () => {
         hasInitiallyFetchedRef.current = true;
       } catch (error) {
         console.error(error);
-        toast.error('Failed to update availability');
+        notificationService.error('Failed to update availability');
         setLoading(false);
       }
     };
@@ -144,7 +144,7 @@ export const HallAvailabilityPage: React.FC = () => {
       const data = await hallService.getHallById(selectedHallId);
       setHall(data);
     } catch (error) {
-      toast.error('Failed to fetch hall details');
+      notificationService.error('Failed to fetch hall details');
     }
   };
 
@@ -211,7 +211,7 @@ export const HallAvailabilityPage: React.FC = () => {
       setLoading(true); // Reusing page loading state or could add specific one
       try {
         await bookingService.deleteBooking(bookingId);
-        toast.success('Booking deleted successfully');
+        notificationService.success('Booking deleted successfully');
 
         // Refresh Current Month Data
         const monthStr = format(currentMonth, 'yyyy-MM');
@@ -222,7 +222,7 @@ export const HallAvailabilityPage: React.FC = () => {
 
       } catch (error) {
         console.error('Failed to delete booking:', error);
-        toast.error('Failed to delete booking');
+        notificationService.error('Failed to delete booking');
       } finally {
         setLoading(false);
       }
