@@ -297,13 +297,15 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
           height: 6px;
           border-radius: 50%;
         }
-        .status-dot.confirmed { background: #166534; }
+        .status-dot.completed { background: #166534; }
         .status-dot.blocked { background: #94A3B8; }
         .status-dot.in_progress { background: #F59E0B; }
         .status-dot.available { background: #3B82F6; }
         .status-dot.today-dot { background: #2563eb; }
 
         .status-confirmed:not(.selected) { background: #f0fdf4; color: #166534; }
+        .status-completed:not(.selected) { background: #166534; color: white; }
+        .status-dot.confirmed { background: #166534; }
         .status-blocked:not(.selected) { background: #f8fafc; color: #64748b; }
         .status-in_progress:not(.selected) { background: #fff7ed; color: #9a3412; }
         .status-available:not(.selected) { background: #eff6ff; color: #1e40af; }

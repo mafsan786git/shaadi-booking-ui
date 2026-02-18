@@ -302,12 +302,12 @@ export const BookingsPage: React.FC = () => {
                 </div>
 
                 {/* Completed */}
-                <div className="stat-card clickable bg-status-completed-light" onClick={() => handleStatClick('COMPLETED')}>
+                <div className="stat-card clickable bg-status-completed-solid" onClick={() => handleStatClick('COMPLETED')}>
                     <div>
-                        <p className="stat-label">Completed</p>
-                        <p className="stat-value text-status-completed">{stats.completed}</p>
+                        <p className="stat-label text-white-muted">Completed</p>
+                        <p className="stat-value text-white">{stats.completed}</p>
                     </div>
-                    <div className="stat-icon-small text-status-completed">
+                    <div className="stat-icon-small text-white">
                         <ClipboardCheck size={16} />
                     </div>
                 </div>
@@ -620,7 +620,10 @@ export const BookingsPage: React.FC = () => {
                 
                 .stat-value.text-status-completed { color: #166534; }
                 .stat-icon-small.text-status-completed { color: #166534; }
-                .stat-card.bg-status-completed-light { background: #f0fdf4; border-color: #f0fdf4; }
+                .stat-card.bg-status-completed-solid { background: #166534; border-color: #166534; color: white; }
+                .stat-label.text-white-muted { color: rgba(255, 255, 255, 0.8); }
+                .stat-value.text-white { color: white; }
+                .stat-icon-small.text-white { color: white; }
                 
                 .stat-value.text-amber { color: var(--color-status-pending); }
                 .stat-icon-small.text-amber { color: var(--color-status-pending); }
