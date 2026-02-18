@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, CheckCircle, XCircle, Plus, Building2, AlertCircle, CalendarPlus, ClipboardCheck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, CheckCircle, XCircle, Building2, AlertCircle, CalendarPlus, ClipboardCheck } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { bookingService } from '../../services/bookingService';
 import type { Booking } from '../../types';
@@ -302,7 +302,7 @@ export const BookingsPage: React.FC = () => {
                 </div>
 
                 {/* Completed */}
-                <div className="stat-card clickable" onClick={() => handleStatClick('COMPLETED')}>
+                <div className="stat-card clickable bg-status-completed-light" onClick={() => handleStatClick('COMPLETED')}>
                     <div>
                         <p className="stat-label">Completed</p>
                         <p className="stat-value text-status-completed">{stats.completed}</p>
@@ -618,8 +618,9 @@ export const BookingsPage: React.FC = () => {
                 .stat-value.text-status-available { color: var(--color-status-available); }
                 .stat-icon-small.text-status-available { color: var(--color-status-available); }
                 
-                .stat-value.text-status-completed { color: var(--color-status-completed); }
-                .stat-icon-small.text-status-completed { color: var(--color-status-completed); }
+                .stat-value.text-status-completed { color: #166534; }
+                .stat-icon-small.text-status-completed { color: #166534; }
+                .stat-card.bg-status-completed-light { background: #f0fdf4; border-color: #f0fdf4; }
                 
                 .stat-value.text-amber { color: var(--color-status-pending); }
                 .stat-icon-small.text-amber { color: var(--color-status-pending); }
@@ -769,8 +770,9 @@ export const BookingsPage: React.FC = () => {
                 }
                 
                 .filter-btn.active-pending {
-                    background: var(--color-status-pending);
-                    color: white;
+                    background: #fff7ed;
+                    color: #9a3412;
+                    border: 1px solid #ffedd5;
                     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
                 }
                 
@@ -782,14 +784,15 @@ export const BookingsPage: React.FC = () => {
                 }
                 
                 .filter-btn.active-completed {
-                    background: var(--color-status-completed);
+                    background: #166534;
                     color: white;
                     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
                 }
                 
                 .filter-btn.active-cancelled {
-                    background: var(--color-status-error);
-                    color: white;
+                    background: #fef2f2;
+                    color: #991b1b;
+                    border: 1px solid #fee2e2;
                     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
                 }
 

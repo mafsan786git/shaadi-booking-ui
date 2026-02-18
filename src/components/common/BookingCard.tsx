@@ -31,7 +31,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
             case 'REQUESTED':
             case 'OWNER_RESPONDED':
                 return { color: '#F59E0B', bg: '#fff7ed' }; // Amber
-            case 'COMPLETED': return { color: '#8B5CF6', bg: '#f5f3ff' }; // Purple
+            case 'COMPLETED': return { color: '#166534', bg: '#f0fdf4' }; // Green
             case 'CANCELLED_BY_OWNER':
             case 'CANCELLED_BY_CUSTOMER':
             case 'DECLINED_BY_OWNER':

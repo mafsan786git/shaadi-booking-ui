@@ -145,6 +145,7 @@ export const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({
         .status-pill.blocked { background: #f8fafc; color: #64748b; border: 1px solid #f1f5f9; }
         .status-pill.in_progress { background: #fff7ed; color: #9a3412; border: 1px solid #ffedd5; }
         .status-pill.confirmed { background: #f0fdf4; color: #166534; border: 1px solid #dcfce7; }
+        .status-pill.completed { background: #f0fdf4; color: #166534; border: 1px solid #dcfce7; }
 
         /* Booking Card Refined Minimal Layout */
         .booking-card {
