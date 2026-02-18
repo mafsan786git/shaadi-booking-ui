@@ -775,8 +775,9 @@ export const BookingsPage: React.FC = () => {
                 }
                 
                 .filter-btn.active-confirmed {
-                    background: var(--color-status-confirmed);
-                    color: white;
+                    background: #f0fdf4;
+                    color: #166534;
+                    border: 1px solid #dcfce7;
                     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
                 }
                 
