@@ -55,14 +55,8 @@ export const Navbar = () => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const isHallListing = location.pathname.startsWith('/halls');
-
-    if (isHallListing && urlZipcode) {
-      navigate(`/halls?zipcode=${urlZipcode}&search=${searchValue}`);
-    } else {
-      if (searchValue.trim().length >= 5) {
-        navigate(`/halls?zipcode=${searchValue}`);
-      }
+    if (searchValue.trim().length >= 5) {
+      navigate(`/halls?zipcode=${searchValue}`);
     }
   };
 
@@ -84,7 +78,7 @@ export const Navbar = () => {
             </div>
           </div>
 
-          {isOwnerOrAdmin && (
+          {isOwnerOrAdmin && !location.pathname.startsWith('/halls') && (
             <button
               className="nav-search-icon-btn"
               onClick={() => navigate('/halls')}
@@ -102,13 +96,13 @@ export const Navbar = () => {
           )}
         </div>
 
-        {/* CENTER SECTION: Search Bar (Hidden for Owners/Admins) */}
+        {/* CENTER SECTION: Search Bar */}
         <div className="nav-center">
-          {!isOwnerOrAdmin && location.pathname !== '/' && (
+          {(!isOwnerOrAdmin || location.pathname.startsWith('/halls')) && location.pathname !== '/' && (
             <form onSubmit={handleSearchSubmit} className="search-form">
               <input
                 type="text"
-                placeholder={location.pathname.startsWith('/halls') && urlZipcode ? "Search Hall Name..." : "Enter Zipcode"}
+                placeholder="Enter Zipcode"
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
                 className="search-input"
