@@ -1,11 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, MapPin } from 'lucide-react';
 import { Button } from '../../components/common/Button';
+import { useAuthStore } from '../../context/useAuthStore';
 
 export const LandingPage = () => {
     const navigate = useNavigate();
     const [zipcode, setZipcode] = useState('');
+    const { user, isAuthenticated } = useAuthStore();
+
+    useEffect(() => {
+        if (isAuthenticated && (user?.role === 'OWNER' || user?.role === 'ADMIN')) {
+            navigate('/dashboard', { replace: true });
+        }
+    }, [isAuthenticated, user, navigate]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();

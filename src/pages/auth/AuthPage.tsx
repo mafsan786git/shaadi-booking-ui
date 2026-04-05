@@ -17,12 +17,16 @@ export const AuthPage = () => {
     const [isLoading, setIsLoading] = useState(false);
 
     // Redirect if already logged in
-    const { isAuthenticated } = useAuthStore();
+    const { isAuthenticated, user } = useAuthStore();
     useEffect(() => {
-        if (isAuthenticated) {
-            navigate('/dashboard');
+        if (isAuthenticated && user) {
+            if (user.role === 'CUSTOMER') {
+                navigate('/');
+            } else {
+                navigate('/dashboard');
+            }
         }
-    }, [isAuthenticated, navigate]);
+    }, [isAuthenticated, user, navigate]);
 
     // Timer state
     const [retryDate, setRetryDate] = useState<Date | null>(null);
@@ -109,7 +113,12 @@ export const AuthPage = () => {
             const tokens = await authService.verifyOtp(phone, otp);
             await login(tokens);
             notificationService.success('Logged in successfully!');
-            navigate('/dashboard');
+            const currentUser = useAuthStore.getState().user;
+            if (currentUser?.role === 'CUSTOMER') {
+                navigate('/');
+            } else {
+                navigate('/dashboard');
+            }
         } catch (error) {
             notificationService.error('Invalid OTP. Please try again.');
             console.error(error);
