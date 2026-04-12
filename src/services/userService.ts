@@ -4,7 +4,7 @@ import type { User, UserStatus } from '../types';
 export const userService = {
     // Admin: Get all owners
     getAllOwners: async (): Promise<User[]> => {
-        const response = await api.get('/admin/users/owner');
+        const response = await api.get('/v1/admin/users/owner');
         return response.data;
     },
 
@@ -26,7 +26,7 @@ export const userService = {
             lng: 0
         };
 
-        const response = await api.put(`/admin/user/${user.id}`, payload);
+        const response = await api.put(`/v1/admin/user/${user.id}`, payload);
         return response.data;
     }
 };
