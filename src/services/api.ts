@@ -4,7 +4,7 @@ import axios from 'axios';
 const getBaseURL = () => {
     if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
     const hostname = window.location.hostname || 'localhost';
-    return `http://${hostname}:8086/api/shaadi-hall-booking/v1`;
+    return `http://${hostname}:8086/api/shaadi-hall-booking`;
 };
 
 const api = axios.create({
