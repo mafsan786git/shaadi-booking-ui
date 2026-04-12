@@ -1,30 +1,34 @@
-import { Link } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import { MapPin, Phone, Mail, Clock } from 'lucide-react';
 
 export const Footer = () => {
+    const location = useLocation();
+
+    // Hide footer on authentication pages to keep a clean form UI
+    if (location.pathname.startsWith('/auth')) {
+        return null;
+    }
+
     return (
         <footer className="footer">
             <div className="container footer-content">
-                <div className="footer-section">
-                    <h3 className="footer-brand">ShaadiBooking</h3>
-                    <p className="footer-desc">
-                        Find the perfect venue for your special day.
-                        Directly connect with hall owners.
-                    </p>
-                </div>
-
-                <div className="footer-section">
-                    <h4>Quick Links</h4>
-                    <div className="footer-links">
-                        <Link to="/">Home</Link>
-                        <Link to="/halls">Browse Halls</Link>
-                        <Link to="/auth">Login / Register</Link>
+                <div className="footer-contact">
+                    <div className="contact-item">
+                        <MapPin size={18} />
+                        <span>123 Wedding Venue Street, Celebration City, IN 400001</span>
                     </div>
-                </div>
-
-                <div className="footer-section">
-                    <h4>Contact</h4>
-                    <p>Support: support@shaadibooking.com</p>
-                    <p>Helpline: +91 98765 43210</p>
+                    <div className="contact-item">
+                        <Phone size={18} />
+                        <span>+91 98765 43210</span>
+                    </div>
+                    <div className="contact-item">
+                        <Mail size={18} />
+                        <span>support@shaadibooking.com</span>
+                    </div>
+                    <div className="contact-item">
+                        <Clock size={18} />
+                        <span>Mon - Sat: 9:00 AM - 8:00 PM</span>
+                    </div>
                 </div>
             </div>
 
@@ -38,42 +42,37 @@ export const Footer = () => {
         .footer {
           background-color: var(--color-surface);
           border-top: 1px solid var(--color-border);
-          padding-top: 3rem;
+          padding-top: 2.5rem;
           margin-top: auto; /* Push to bottom */
         }
         .footer-content {
+          padding-bottom: 2rem;
+        }
+        .footer-contact {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-          gap: 2rem;
-          padding-bottom: 3rem;
+          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+          row-gap: 1.5rem;
+          column-gap: 2rem;
+          width: 100%;
         }
-        .footer-brand {
-          font-size: 1.5rem;
-          font-weight: 700;
-          color: var(--color-primary);
-          margin-bottom: 1rem;
-        }
-        .footer-desc {
-          color: var(--color-text-muted);
-          line-height: 1.6;
-        }
-        .footer-section h4 {
-          font-size: 1.1rem;
-          font-weight: 600;
-          margin-bottom: 1rem;
-          color: var(--color-text-main);
-        }
-        .footer-links {
+        .contact-item {
           display: flex;
-          flex-direction: column;
+          align-items: flex-start;
           gap: 0.75rem;
-        }
-        .footer-links a {
           color: var(--color-text-muted);
-          transition: color 0.2s;
+          font-size: 0.95rem;
+          line-height: 1.5;
+          transition: color 0.2s ease, transform 0.2s ease;
+          cursor: default;
         }
-        .footer-links a:hover {
+        .contact-item:hover {
+          color: var(--color-text-main);
+          transform: translateY(-1px);
+        }
+        .contact-item svg {
           color: var(--color-primary);
+          flex-shrink: 0;
+          margin-top: 0.15rem; /* Optical alignment with text */
         }
         .footer-bottom {
           border-top: 1px solid var(--color-border);
