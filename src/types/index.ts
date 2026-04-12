@@ -61,15 +61,16 @@ export interface Hall {
 
 export type HallStatus = 'ACTIVE' | 'INACTIVE' | 'DELETED';
 
-export type BookingStatus = 'REQUESTED' | 'OWNER_RESPONDED' | 'CONFIRMED' | 'CANCELLED_BY_OWNER' | 'CANCELLED_BY_CUSTOMER' | 'DECLINED_BY_OWNER' | 'REJECTED_BY_CUSTOMER' | 'EXPIRED';
+export type BookingStatus = 'REQUESTED' | 'OWNER_RESPONDED' | 'CONFIRMED' | 'COMPLETED' | 'REJECTED' | 'CANCELLED';
 
 export type EventType = 'WEDDING' | 'RECEPTION' | 'ENGAGEMENT' | 'BIRTHDAY' | 'ANNIVERSARY' | 'OTHER';
 
-export type AvailabilityStatus = 'AVAILABLE' | 'BOOKED' | 'BLOCKED' | 'PENDING';
+export type AvailabilityStatus = 'AVAILABLE' | 'CONFIRMED' | 'BLOCKED' | 'IN_PROGRESS' | 'COMPLETED';
 
 export interface Booking {
     id: string;
     hallId: string;
+    hallName?: string;
     customerPhone: string;
     customerName: string;
     startDate: string;       // ISO timestamps
@@ -110,4 +111,25 @@ export interface HallRequest {
     facilities: string[];
     description: string;
     contacts: string[];
+}
+
+export interface BookingRequest {
+    hallId: string;
+    customerPhone: string;
+    customerName: string;
+    startDate: string;       // ISO date YYYY-MM-DD
+    endDate?: string;        // ISO date YYYY-MM-DD
+    eventType: EventType;
+    totalGuest: number;
+    customerNote?: string;
+    status?: BookingStatus;
+    finalPrice?: number;
+    ownerNote?: string;
+    requirements?: string[];
+}
+
+export interface BookingResponseRequest {
+    status: 'CONFIRMED' | 'DECLINED_BY_OWNER';
+    ownerNote?: string;
+    finalPrice?: number;
 }

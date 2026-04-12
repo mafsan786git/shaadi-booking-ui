@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Calendar as CalendarIcon, RefreshCcw } from 'lucide-react';
 import { AvailabilityCalendar } from '../../components/owner/AvailabilityCalendar';
 import { DayDetailsPanel } from '../../components/owner/DayDetailsPanel';
+import { bookingService } from '../../services/bookingService';
 import { hallService } from '../../services/hallService';
 import { useHallStore } from '../../context/useHallStore';
 import {
@@ -12,81 +13,85 @@ import {
   startOfMonth,
   isSameMonth,
   addMonths,
-  subMonths
+  subMonths,
+  isBefore,
+  startOfDay
 } from 'date-fns';
-import type { Hall } from '../../types';
-import { toast } from 'react-hot-toast';
+import type { Hall, BookingRequest, Booking } from '../../types';
+import { notificationService } from '../../services/notificationService';
+import { BookingModal } from '../../components/common/BookingModal';
 
 export const HallAvailabilityPage: React.FC = () => {
   const navigate = useNavigate();
-  const { halls, selectedHallId, fetchAvailability: storeFetchAvailability, fetchMultiAvailability: storeFetchMultiAvailability, availabilityCache } = useHallStore();
+
+  const [searchParams] = useSearchParams(); // Add this
+
+  // Use granular selectors to prevent unnecessary re-renders
+  const halls = useHallStore(state => state.halls);
+  const selectedHallId = useHallStore(state => state.selectedHallId);
+  const setSelectedHallId = useHallStore(state => state.setSelectedHallId); // Add this
+  const fetchAvailability = useHallStore(state => state.fetchAvailability);
+  const fetchMultiAvailability = useHallStore(state => state.fetchMultiAvailability);
+  const availabilityCache = useHallStore(state => state.availabilityCache);
+
   const hasInitiallyFetchedRef = useRef(false);
 
   const [hall, setHall] = useState<Hall | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalReadOnly, setIsModalReadOnly] = useState(false);
+  const [bookingInitialData, setBookingInitialData] = useState<Partial<BookingRequest>>({});
+  const [activeBookingId, setActiveBookingId] = useState<string | undefined>(undefined);
+  const [monthBookings, setMonthBookings] = useState<Booking[]>([]);
 
   useEffect(() => {
-    if (!selectedHallId) {
-      navigate('/dashboard');
+    const hallIdParam = searchParams.get('hallId');
+    const monthParam = searchParams.get('month');
+
+    // Handle Hall ID from URL
+    if (hallIdParam && hallIdParam !== selectedHallId) {
+      setSelectedHallId(hallIdParam);
+    } else if (!selectedHallId && !hallIdParam) {
+      // Only redirect if NO hall is selected and NO param provided
+      navigate('/hall');
       return;
     }
 
-    // First check if hall exists in global store
-    const cachedHall = halls.find(h => h.hallId === selectedHallId);
-    if (cachedHall) {
-      setHall(cachedHall);
-    } else {
-      fetchHallDetails();
-    }
-  }, [selectedHallId, halls, navigate]);
-
-  // Main fetch and pre-fetch effect
-  useEffect(() => {
-    if (!selectedHallId) return;
-
-    const loadData = async () => {
-      const monthStr = format(currentMonth, 'yyyy-MM');
-
-      // Check if we already have this in cache
-      const cachedEntry = availabilityCache[selectedHallId]?.[monthStr];
-
-      // Show loading ONLY if it's not in cache OR if we're on a future month change (not initial land)
-      const isInitialLand = !hasInitiallyFetchedRef.current;
-      const shouldShowLoading = !cachedEntry?.data;
-
-      if (shouldShowLoading) setLoading(true);
-
-      try {
-        // Fetch main month
-        // Force refresh on initial land to capture silent updates
-        await storeFetchAvailability(selectedHallId, monthStr, isInitialLand);
-        setLoading(false);
-
-        // Trigger Pre-fetching in background
-        prefetchAdjacentMonths(selectedHallId, currentMonth, isInitialLand);
-
-        hasInitiallyFetchedRef.current = true;
-      } catch (error) {
-        toast.error('Failed to update availability');
-        setLoading(false);
+    // Handle Month from URL
+    if (monthParam) {
+      const parsedMonth = parseISO(monthParam + '-01'); // Append day to make it valid ISO
+      if (!isNaN(parsedMonth.getTime()) && !isSameMonth(parsedMonth, currentMonth)) {
+        setCurrentMonth(parsedMonth);
+        setSelectedDate(startOfMonth(parsedMonth));
       }
-    };
+    }
 
-    loadData();
-  }, [selectedHallId, currentMonth, storeFetchAvailability]);
+    const effectiveHallId = hallIdParam || selectedHallId;
 
-  const prefetchAdjacentMonths = (hallId: string, baseDate: Date, force = false) => {
+    if (effectiveHallId) {
+      // First check if hall exists in global store
+      const cachedHall = halls.find(h => h.hallId === effectiveHallId);
+      if (cachedHall) {
+        setHall(cachedHall);
+      } else {
+        // If not in store, we might need to fetch it or generic fetch
+        fetchHallDetails(effectiveHallId);
+      }
+    }
+
+  }, [selectedHallId, halls, navigate, searchParams]); // Add searchParams
+
+  // Stabilize pre-fetch function
+  const prefetchAdjacentMonths = useCallback((hallId: string, baseDate: Date, force = false) => {
     // Detect if this is "Initial Load" (Viewing current month as of now)
     const isNow = isSameMonth(baseDate, new Date());
 
     let offsets: number[] = [];
     if (isNow) {
-      // Fetch next 3 months on land
       offsets = [1, 2, 3];
     } else {
-      // Fetch prev 2 and next 2 on move
       offsets = [-2, -1, 1, 2];
     }
 
@@ -97,17 +102,50 @@ export const HallAvailabilityPage: React.FC = () => {
       return format(offsetDate, 'yyyy-MM');
     });
 
-    // Batched background fetch (silent)
-    storeFetchMultiAvailability(hallId, monthsToFetch, force).catch(() => { });
-  };
+    fetchMultiAvailability(hallId, monthsToFetch, force).catch(() => { });
+  }, [fetchMultiAvailability]);
 
-  const fetchHallDetails = async () => {
+  // Main fetch and pre-fetch effect
+  useEffect(() => {
     if (!selectedHallId) return;
+
+    const loadData = async () => {
+      const monthStr = format(currentMonth, 'yyyy-MM');
+      const isInitialLand = !hasInitiallyFetchedRef.current;
+
+      // We only show loading if we don't have data in cache yet
+      // This provides a "snappy" feel when navigating back/forth
+      const cachedEntry = useHallStore.getState().availabilityCache[selectedHallId]?.[monthStr];
+      if (!cachedEntry?.data) setLoading(true);
+
+      try {
+        const [_, bookings] = await Promise.all([
+          fetchAvailability(selectedHallId, monthStr, isInitialLand),
+          bookingService.getBookingsForMonth(selectedHallId, monthStr)
+        ]);
+        setMonthBookings(bookings);
+
+        setLoading(false);
+        prefetchAdjacentMonths(selectedHallId, currentMonth, isInitialLand);
+        hasInitiallyFetchedRef.current = true;
+      } catch (error) {
+        console.error(error);
+        notificationService.error('Failed to update availability');
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [selectedHallId, currentMonth, fetchAvailability, prefetchAdjacentMonths]);
+
+  const fetchHallDetails = async (id?: string) => {
+    const targetId = id || selectedHallId;
+    if (!targetId) return;
     try {
-      const data = await hallService.getHallById(selectedHallId);
+      const data = await hallService.getHallById(targetId);
       setHall(data);
     } catch (error) {
-      toast.error('Failed to fetch hall details');
+      notificationService.error('Failed to fetch hall details');
     }
   };
 
@@ -128,7 +166,68 @@ export const HallAvailabilityPage: React.FC = () => {
   };
 
   const handleDirectBooking = (date: Date) => {
-    toast.success(`Booking request for ${format(date, 'MMM do')} coming soon!`);
+    setBookingInitialData({
+      startDate: format(date, 'yyyy-MM-dd'),
+    });
+    setActiveBookingId(undefined);
+    setIsModalReadOnly(false);
+    setIsModalOpen(true);
+  };
+
+  const handleBookingSuccess = async () => {
+    const monthStr = format(currentMonth, 'yyyy-MM');
+    // Refresh availability and bookings for the current month
+    try {
+      await Promise.all([
+        fetchAvailability(selectedHallId!, monthStr, true),
+        bookingService.getBookingsForMonth(selectedHallId!, monthStr).then(bookings => setMonthBookings(bookings))
+      ]);
+    } catch (error) {
+      console.error('Failed to refresh data after booking:', error);
+    }
+    setIsModalOpen(false);
+  };
+
+  const handleEditBooking = (booking: Booking) => {
+    setActiveBookingId(booking.id);
+    setBookingInitialData({
+      customerName: booking.customerName,
+      customerPhone: booking.customerPhone,
+      startDate: booking.startDate,
+      endDate: booking.endDate,
+      eventType: booking.eventType,
+      totalGuest: booking.totalGuest,
+      customerNote: booking.customerNote,
+      ownerNote: booking.ownerNote,
+      status: booking.status,
+      finalPrice: booking.finalPrice,
+
+    });
+    setIsModalReadOnly(true);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteBooking = async (bookingId: string) => {
+    if (window.confirm('Are you sure you want to delete this booking? This action cannot be undone.')) {
+      setLoading(true); // Reusing page loading state or could add specific one
+      try {
+        await bookingService.deleteBooking(bookingId);
+        notificationService.success('Booking deleted successfully');
+
+        // Refresh Current Month Data
+        const monthStr = format(currentMonth, 'yyyy-MM');
+        await Promise.all([
+          fetchAvailability(selectedHallId!, monthStr, true),
+          bookingService.getBookingsForMonth(selectedHallId!, monthStr).then(bookings => setMonthBookings(bookings))
+        ]);
+
+      } catch (error) {
+        console.error('Failed to delete booking:', error);
+        notificationService.error('Failed to delete booking');
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   if (!hall && !loading) return <div className="container">Hall not found</div>;
@@ -136,17 +235,37 @@ export const HallAvailabilityPage: React.FC = () => {
   const currentMonthStr = format(currentMonth, 'yyyy-MM');
   const monthAvailability = (selectedHallId && availabilityCache[selectedHallId]?.[currentMonthStr]?.data) || [];
 
-  const selectedDayData = monthAvailability.find((d: any) => isSameDay(parseISO(d.date), selectedDate));
-  const currentStatus = selectedDayData?.status || 'AVAILABLE';
+
+  // Filter bookings that overlap with the selected date
+  const selectedDayBookings = monthBookings.filter(b => {
+    const s = format(parseISO(b.startDate), 'yyyy-MM-dd');
+    const e = format(parseISO(b.endDate), 'yyyy-MM-dd');
+    const curr = format(selectedDate, 'yyyy-MM-dd');
+    return curr >= s && curr <= e;
+  }).sort((a, b) => {
+    const isCancelledA = ['CANCELLED', 'REJECTED'].includes(a.status);
+    const isCancelledB = ['CANCELLED', 'REJECTED'].includes(b.status);
+
+    if (isCancelledA && !isCancelledB) return 1;
+    if (!isCancelledA && isCancelledB) return -1;
+
+    return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+  });
+
+  const selectedDayData = monthAvailability.find((d: any) => d?.date && isSameDay(parseISO(d.date), selectedDate));
+
+  // Prioritize COMPLETED status from actual bookings over raw availability
+  const hasCompletedBooking = selectedDayBookings.some(b => b.status === 'COMPLETED');
+  const currentStatus = hasCompletedBooking ? 'COMPLETED' : (selectedDayData?.status || 'AVAILABLE');
 
   const isShowingCurrentMonth = isSameMonth(currentMonth, new Date());
 
   return (
     <div className="container page-padding">
       <div className="page-header">
-        <button className="back-btn" onClick={() => navigate('/dashboard')}>
+        <button className="back-btn" onClick={() => navigate('/hall')}>
           <ChevronLeft size={20} />
-          <span>Back to Dashboard</span>
+          <span>Back to Hall</span>
         </button>
       </div>
 
@@ -177,6 +296,7 @@ export const HallAvailabilityPage: React.FC = () => {
             selectedDate={selectedDate}
             onDateSelect={handleDateSelect}
             availabilityData={monthAvailability}
+            bookings={monthBookings}
           />
         </div>
 
@@ -184,30 +304,34 @@ export const HallAvailabilityPage: React.FC = () => {
           <DayDetailsPanel
             selectedDate={selectedDate}
             status={currentStatus}
-            booking={selectedDayData?.booking}
+            note={selectedDayData?.note}
+            bookings={selectedDayBookings}
+            selectedBookingId={selectedDayBookings[0]?.id}
             onDirectBooking={handleDirectBooking}
+            onEditBooking={handleEditBooking}
+            onDeleteBooking={handleDeleteBooking}
           />
 
-          <div className="availability-legend card">
-            <div className="legend-item">
-              <div className="legend-color available"></div>
-              <span>Available</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-color booked"></div>
-              <span>Booked</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-color pending"></div>
-              <span>In Progress</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-color blocked"></div>
-              <span>Blocked</span>
-            </div>
-          </div>
         </div>
       </div>
+
+
+
+      <BookingModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={handleBookingSuccess}
+        initialData={bookingInitialData}
+        mode="OWNER"
+        hallId={selectedHallId || ''}
+        readOnly={isModalReadOnly}
+        allowEdit={
+          bookingInitialData.status && ['COMPLETED', 'CANCELLED', 'REJECTED'].includes(bookingInitialData.status)
+            ? false
+            : (bookingInitialData.endDate ? !isBefore(parseISO(bookingInitialData.endDate), startOfDay(new Date())) : true)
+        }
+        bookingId={activeBookingId}
+      />
 
       <style>{`
         .page-padding {
@@ -313,6 +437,12 @@ export const HallAvailabilityPage: React.FC = () => {
           align-items: start;
         }
 
+        .details-section {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+
         .card {
           background: white;
           border-radius: 10px;
@@ -325,34 +455,6 @@ export const HallAvailabilityPage: React.FC = () => {
           padding: 0.75rem;
           position: relative;
         }
-
-        .availability-legend {
-          margin-top: 1rem;
-          padding: 0.75rem 1rem;
-          display: flex;
-          justify-content: space-between;
-          gap: 0.5rem;
-          flex-wrap: wrap;
-        }
-
-        .legend-item {
-          display: flex;
-          align-items: center;
-          gap: 0.4rem;
-          font-size: 0.7rem;
-          font-weight: 500;
-          color: #64748b;
-        }
-
-        .legend-color {
-          width: 10px;
-          height: 10px;
-          border-radius: 3px;
-        }
-        .legend-color.available { background: #f0fdf4; border: 1px solid #dcfce7; }
-        .legend-color.booked { background: #fef2f2; border: 1px solid #fee2e2; }
-        .legend-color.pending { background: #fff7ed; border: 1px solid #ffedd5; }
-        .legend-color.blocked { background: #f8fafc; border: 1px solid #f1f5f9; }
 
         .loading-overlay {
           position: absolute;
@@ -375,6 +477,7 @@ export const HallAvailabilityPage: React.FC = () => {
           }
         }
       `}</style>
-    </div>
+    </div >
   );
 };
+

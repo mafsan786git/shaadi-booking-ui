@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { userService } from '../../services/userService';
 import type { User } from '../../types';
-import { toast } from 'react-hot-toast';
+import { notificationService } from '../../services/notificationService';
 
 export const UserManagementPage = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -16,7 +16,7 @@ export const UserManagementPage = () => {
             const data = await userService.getAllOwners();
             setUsers(data);
         } catch (error) {
-            toast.error('Failed to fetch users');
+            notificationService.error('Failed to fetch users');
         } finally {
             setLoading(false);
         }
@@ -29,11 +29,11 @@ export const UserManagementPage = () => {
 
         try {
             await userService.updateUserStatus(user, newStatus);
-            toast.success(`User ${newStatus === 'ACTIVE' ? 'activated' : 'deactivated'}`);
+            notificationService.success(`User ${newStatus === 'ACTIVE' ? 'activated' : 'deactivated'}`);
         } catch (error) {
             // Revert on failure
             setUsers(users.map(u => u.id === user.id ? { ...u, status: user.status } : u));
-            toast.error('Failed to update status');
+            notificationService.error('Failed to update status');
         }
     };
 

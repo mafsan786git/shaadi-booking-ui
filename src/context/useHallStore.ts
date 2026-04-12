@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Hall } from '../types';
 import { hallService } from '../services/hallService';
-import { toast } from 'react-hot-toast';
+import { notificationService } from '../services/notificationService';
 
 interface HallState {
     halls: Hall[];
@@ -58,7 +58,7 @@ export const useHallStore = create<HallState>((set, get) => ({
         } catch (error) {
             console.error("Failed to fetch halls", error);
             if (!isSilent) {
-                toast.error('Failed to fetch halls');
+                notificationService.error('Failed to fetch halls');
             }
             set({ isLoading: false });
         }
@@ -74,7 +74,7 @@ export const useHallStore = create<HallState>((set, get) => ({
             );
             set({ halls: updatedHalls });
         } catch (error) {
-            toast.error('Failed to update status');
+            notificationService.error('Failed to update status');
             throw error;
         }
     },
@@ -93,7 +93,26 @@ export const useHallStore = create<HallState>((set, get) => ({
 
         try {
             const data = await hallService.getAvailability(hallId, month);
-            const nonAvailableDates = data.nonAvailableDates || [];
+
+            // API might return:
+            // 1. [{ month: '...', nonAvailableDates: [...] }] (Array of month object)
+            // 2. { month: '...', nonAvailableDates: [...] } (Single month object)
+            // 3. [...] (Flat array of dates)
+
+            let nonAvailableDates: any[] = [];
+            if (Array.isArray(data)) {
+                if (data.length > 0 && (data[0] as any).nonAvailableDates) {
+                    nonAvailableDates = (data[0] as any).nonAvailableDates;
+                } else {
+                    nonAvailableDates = data;
+                }
+            } else {
+                nonAvailableDates = (data as any).nonAvailableDates || [];
+            }
+
+            if (month === '2025-01') {
+                console.log(`[Store Debug] Fetched Jan 2025. Data length: ${nonAvailableDates.length}. Type: ${typeof data}`);
+            }
 
             set((state) => ({
                 availabilityCache: {

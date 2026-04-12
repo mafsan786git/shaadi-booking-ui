@@ -9,10 +9,13 @@ import {
   isSameMonth,
   isSameDay,
   addMonths,
-  subMonths
+  subMonths,
+  isBefore,
+  startOfDay,
+  parseISO
 } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { DayAvailabilityResponse } from '../../types';
+import type { DayAvailabilityResponse, Booking, AvailabilityStatus } from '../../types';
 
 interface AvailabilityCalendarProps {
   currentMonth: Date;
@@ -20,6 +23,7 @@ interface AvailabilityCalendarProps {
   selectedDate: Date;
   onDateSelect: (date: Date) => void;
   availabilityData: DayAvailabilityResponse[];
+  bookings?: Booking[];
 }
 
 export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
@@ -28,6 +32,7 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
   selectedDate,
   onDateSelect,
   availabilityData,
+  bookings = []
 }) => {
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(monthStart);
@@ -39,9 +44,19 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
     end: endDate,
   });
 
-  const getDayStatus = (date: Date) => {
-    const isoDate = format(date, 'yyyy-MM-dd');
-    const dayData = availabilityData.find(d => d.date === isoDate);
+  const getDayStatus = (date: Date): AvailabilityStatus => {
+    // Priority: Check if any booking on this day is COMPLETED to show forest green
+    const hasCompleted = bookings.some(b => {
+      if (b.status !== 'COMPLETED') return false;
+      const s = startOfDay(parseISO(b.startDate));
+      const e = startOfDay(parseISO(b.endDate));
+      const curr = startOfDay(date);
+      return curr >= s && curr <= e;
+    });
+
+    if (hasCompleted) return 'COMPLETED';
+
+    const dayData = availabilityData.find(d => isSameDay(parseISO(d.date), date));
     return dayData?.status || 'AVAILABLE';
   };
 
@@ -110,17 +125,36 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
           const isCurrentMonth = isSameMonth(date, monthStart);
           const isSelected = isSameDay(date, selectedDate);
           const isToday = isSameDay(date, new Date());
+          const isPast = isBefore(date, startOfDay(new Date()));
+
+          // Determine if the day should be clickable
+          // Past + Available = Not clickable
+          // Past + Booked = Clickable
+          // Future = Clickable
+          const isClickable = isCurrentMonth && (!isPast || status !== 'AVAILABLE');
 
           return (
             <div
               key={index}
-              className={`calendar-day ${!isCurrentMonth ? 'outside-month' : ''} ${isSelected && isCurrentMonth ? 'selected' : ''} ${isToday && isCurrentMonth ? 'today' : ''} ${isCurrentMonth ? `status-${status.toLowerCase()}` : ''}`}
-              onClick={() => isCurrentMonth && onDateSelect(date)}
+              className={`calendar-day 
+                ${!isCurrentMonth ? 'outside-month' : ''} 
+                ${isSelected && isCurrentMonth ? 'selected' : ''} 
+                ${isToday && isCurrentMonth ? 'today' : ''} 
+                ${isCurrentMonth ? `status-${status.toLowerCase()}` : ''}
+                ${isPast && isCurrentMonth ? 'past' : ''}
+                ${!isClickable ? 'not-clickable' : ''}
+              `}
+              onClick={() => isClickable && onDateSelect(date)}
             >
               <span className="day-number">{format(date, 'd')}</span>
-              {isCurrentMonth && status !== 'AVAILABLE' && (
+              {isCurrentMonth && (status !== 'AVAILABLE' || isToday) && (
                 <div className="status-dot-container">
-                  <div className={`status-dot ${status.toLowerCase()}`} />
+                  {status !== 'AVAILABLE' && (
+                    <div className={`status-dot ${status.toLowerCase()}`} />
+                  )}
+                  {isToday && !isSelected && (
+                    <div className="status-dot today-dot" />
+                  )}
                 </div>
               )}
             </div>
@@ -227,7 +261,7 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
           -webkit-tap-highlight-color: transparent;
         }
         @media (hover: hover) {
-          .calendar-day:hover:not(.outside-month) {
+          .calendar-day:hover:not(.outside-month):not(.not-clickable) {
             background: #f1f5f9;
             border-color: #cbd5e1;
           }
@@ -248,15 +282,6 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
           color: #2563eb;
           font-weight: 800;
         }
-        .calendar-day.today:not(.selected)::after {
-          content: '';
-          position: absolute;
-          bottom: 4px;
-          width: 4px;
-          height: 4px;
-          background: #2563eb;
-          border-radius: 50%;
-        }
         .day-number {
           font-size: 0.95rem;
           z-index: 1;
@@ -272,15 +297,38 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
           height: 6px;
           border-radius: 50%;
         }
-        .status-dot.booked { background: #ef4444; }
-        .status-dot.blocked { background: #94a3b8; }
-        .status-dot.pending { background: #f59e0b; }
-        .status-dot.available { background: #22c55e; }
+        .status-dot.completed { background: #166534; }
+        .status-dot.blocked { background: #94A3B8; }
+        .status-dot.in_progress { background: #F59E0B; }
+        .status-dot.available { background: #3B82F6; }
+        .status-dot.today-dot { background: #2563eb; }
 
-        .status-booked:not(.selected) { background: #fef2f2; color: #991b1b; }
+        .status-confirmed:not(.selected) { background: #f0fdf4; color: #166534; }
+        .status-completed:not(.selected) { background: #166534; color: white; }
+        .status-completed:not(.selected) .day-number { color: white; }
+        .status-dot.confirmed { background: #166534; }
         .status-blocked:not(.selected) { background: #f8fafc; color: #64748b; }
-        .status-pending:not(.selected) { background: #fff7ed; color: #9a3412; }
-        .status-available:not(.selected) { background: #f0fdf4; color: #166534; }
+        .status-in_progress:not(.selected) { background: #fff7ed; color: #9a3412; }
+        .status-available:not(.selected) { background: #eff6ff; color: #1e40af; }
+
+        /* Past date styling - applied to ALL past dates */
+        .calendar-day.past:not(.selected) {
+          background: #f8fafc !important; /* Very light gray bg */
+          color: #94a3b8 !important; /* Gray text */
+        }
+
+        /* Ensure dots on past dates are visible */
+        .calendar-day.past .status-dot {
+          opacity: 0.8;
+        }
+        
+        .calendar-day.not-clickable {
+          cursor: default;
+        }
+
+        /* Ensure past bookings are still readable but maybe slightly dimmed if desired, 
+           or kept same as normal bookings but allowed interactions */
+        
       `}</style>
     </div>
   );

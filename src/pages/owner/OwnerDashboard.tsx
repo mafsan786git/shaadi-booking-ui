@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useHallStore } from '../../context/useHallStore';
 import type { Hall } from '../../types';
-import { toast } from 'react-hot-toast';
-import { Plus, Trash, MapPin, Users, ListOrdered } from 'lucide-react';
+import { notificationService } from '../../services/notificationService';
+import { Plus, MapPin, Users, SlidersHorizontal } from 'lucide-react';
 import { Button } from '../../components/common/Button';
 import { CreateHallModal } from '../../components/owner/CreateHallModal';
 
@@ -11,16 +11,17 @@ export const OwnerDashboard = () => {
     const { halls, isLoading, fetchHalls, updateHallStatus, setSelectedHallId } = useHallStore();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [hallToEdit, setHallToEdit] = useState<Hall | null>(null);
+    const [isViewMode, setIsViewMode] = useState(false);
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
 
     useEffect(() => {
-        // fetchHalls handles silent background updates if already loaded
         fetchHalls();
     }, [searchParams.get('refresh'), fetchHalls]);
 
     const handleCreateNew = () => {
         setHallToEdit(null);
+        setIsViewMode(false);
         setIsCreateModalOpen(true);
     };
 
@@ -28,42 +29,34 @@ export const OwnerDashboard = () => {
         try {
             const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
             await updateHallStatus(hallId, newStatus as any);
-            toast.success(`Hall ${newStatus.toLowerCase()}d successfully`);
+            notificationService.success(`Hall ${newStatus.toLowerCase()}d successfully`);
         } catch (error) {
             // Error handled in store
         }
     };
 
-    const handleDelete = async (hallId: string) => {
-        if (!window.confirm('Are you sure you want to delete this hall?')) return;
-
-        try {
-            await updateHallStatus(hallId, 'DELETED');
-            toast.success('Hall deleted successfully');
-        } catch (error) {
-            // Error handled in store
-        }
-    };
-
-    // Only show full-page loading if it's the very first load and we're currently fetching
     if (isLoading && halls.length === 0) return (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-            Loading...
+            <div className="loader">Loading...</div>
         </div>
     );
 
     const activeHalls = halls.filter(h => h.status !== 'DELETED');
 
     return (
-        <div className="container" style={{ paddingTop: '0.25rem', paddingBottom: '0.5rem' }}>
+        <div className="container dashboard-container">
             <div className="dashboard-header">
-                <Button variant="outline" onClick={() => { }} style={{ padding: '0.25rem 0.5rem', height: 'auto', border: '1px solid #e2e8f0' }}>
-                    <ListOrdered size={16} style={{ marginRight: '0.4rem' }} />Filter
-                </Button>
-
-                <div className="header-action-right">
-                    <Button variant="primary" onClick={handleCreateNew} style={{ whiteSpace: 'nowrap', padding: '0.25rem 0.75rem' }}>
-                        <Plus size={18} style={{ marginRight: '0.25rem', flexShrink: 0 }} />Add
+                {/* <div className="header-left">
+                    <h3 className="page-title">Hall Management</h3>
+                </div> */}
+                <div className="header-actions">
+                    <Button variant="outline" onClick={() => { }} className="filter-btn">
+                        <SlidersHorizontal size={18} />
+                        <span>Filter</span>
+                    </Button>
+                    <Button variant="primary" onClick={handleCreateNew} className="add-btn">
+                        <Plus size={18} />
+                        <span>Add Hall</span>
                     </Button>
                 </div>
             </div>
@@ -73,6 +66,7 @@ export const OwnerDashboard = () => {
                 onClose={() => setIsCreateModalOpen(false)}
                 onSuccess={() => fetchHalls(true)}
                 hallToEdit={hallToEdit}
+                initialViewMode={isViewMode}
             />
 
             {activeHalls.length === 0 ? (
@@ -83,10 +77,7 @@ export const OwnerDashboard = () => {
                 <div className="hall-grid">
                     {activeHalls.map(hall => (
                         <div key={hall.hallId} className="hall-card">
-                            <div className="card-clickable-area" onClick={() => {
-                                setSelectedHallId(hall.hallId);
-                                navigate(`/hall/availability`);
-                            }}>
+                            <div className="card-info-area">
                                 <div className="card-top-row">
                                     <div className="status-container">
                                         <span className={`status-badge ${hall.status?.toLowerCase() || 'inactive'}`}>
@@ -94,14 +85,16 @@ export const OwnerDashboard = () => {
                                         </span>
                                     </div>
                                     <button
-                                        className="delete-icon-btn"
+                                        className="view-icon-btn"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            handleDelete(hall.hallId);
+                                            setHallToEdit(hall);
+                                            setIsViewMode(true);
+                                            setIsCreateModalOpen(true);
                                         }}
-                                        title="Delete Hall"
+                                        title="View Details"
                                     >
-                                        <Trash size={20} />
+                                        View
                                     </button>
                                 </div>
 
@@ -127,42 +120,65 @@ export const OwnerDashboard = () => {
 
                             <div className="card-bottom-row">
                                 <Button
-                                    variant={hall.status === 'ACTIVE' ? 'outline' : 'success'}
+                                    variant="outline"
                                     onClick={() => handleStatusChange(hall.hallId, hall.status || 'INACTIVE')}
-                                    className="action-btn"
+                                    className={`action-btn ${hall.status === 'ACTIVE' ? 'btn-deactivate' : 'btn-activate'}`}
                                 >
                                     {hall.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
                                 </Button>
                                 <Button
                                     variant="primary"
                                     onClick={() => {
-                                        setHallToEdit(hall);
-                                        setIsCreateModalOpen(true);
+                                        setSelectedHallId(hall.hallId);
+                                        const monthParam = searchParams.get('month');
+                                        const query = monthParam ? `?month=${monthParam}` : '';
+                                        navigate(`/hall/availability${query}`);
                                     }}
                                     className="action-btn"
+                                    disabled={hall.status !== 'ACTIVE'}
+                                    title={hall.status !== 'ACTIVE' ? "Activate hall to request bookings" : ""}
                                 >
-                                    Edit
+                                    Request Booking
                                 </Button>
                             </div>
                         </div>
                     ))}
                 </div>
-            )}
+            )
+            }
 
             <style>{`
+                .dashboard-container {
+                    padding-top: 1rem;
+                    padding-bottom: 1rem;
+                    padding-left: 0.75rem;
+                    padding-right: 0.75rem;
+                    max-width: 1200px;
+                    margin: 0 auto;
+                }
                 .dashboard-header {
                     display: flex;
                     justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 0.5rem;
-                    padding-bottom: 0.25rem;
-                    min-height: 40px;
+                    align-items: flex-end;
+                    margin-bottom: 1rem;
+                  
+                    gap: 1rem;
                 }
-                /* Removed unnecessary classes */
+                .page-title {
+                    font-size: 1.5rem;
+                    font-weight: 800;
+                    color: var(--color-text-main);
+                    line-height: 1.2;
+                }
+                .header-actions {
+                    display: flex;
+                    gap: 0.75rem;
+                }
+                
                 .hall-grid {
                     display: grid;
                     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-                    gap: 1.5rem;
+                    gap: 1rem;
                 }
                 .hall-card {
                     background: white;
@@ -196,26 +212,31 @@ export const OwnerDashboard = () => {
                     letter-spacing: 0.05em;
                 }
                 .status-badge.active { background: #dcfce7; color: #166534; }
-                .status-badge.inactive { background: #f3f4f6; color: #374151; }
+                .status-badge.inactive { background: #fee2e2; color: #dc2626; }
                 
-                .delete-icon-btn {
-                    background: none;
-                    border: none;
-                    color: #ef4444;
+                
+                .view-icon-btn {
+                    background: white;
+                    border: 1px solid #3b82f6;
+                    color: #2563eb;
                     cursor: pointer;
-                    padding: 0.25rem;
-                    border-radius: 50%;
-                    transition: background 0.2s;
+                    padding: 0.25rem 0.75rem;
+                    border-radius: 6px;
+                    transition: all 0.2s;
                     display: flex;
                     align-items: center;
                     justify-content: center;
+                    font-size: 0.85rem;
+                    font-weight: 500;
                 }
-                .delete-icon-btn:hover {
-                    background: #fee2e2;
+                .view-icon-btn:hover {
+                    background: #f3f4f6;
+                    color: #111827;
+                    border-color: #d1d5db;
                 }
                 
                 .card-content {
-                    padding: 0.5rem 1.5rem 1.5rem 1.5rem;
+                    padding: 0.5rem 1rem 0.5rem 1rem;
                     flex-grow: 1;
                 }
                 
@@ -255,23 +276,48 @@ export const OwnerDashboard = () => {
                 .card-bottom-row {
                     display: flex;
                     justify-content: space-between;
-                    padding: 1rem;
+                    padding: 0.75rem;
                     background: #f9fafb;
                     border-top: 1px solid #f3f4f6;
                     gap: 1rem;
                 }
                 .action-btn {
-                    padding: 0.4rem 1rem;
+                    padding: 0.3rem 0.75rem;
                     font-size: 0.9rem;
                 }
-                .card-clickable-area {
-                    cursor: pointer;
+                .btn-deactivate {
+                    border-color: #fecaca !important;
+                    color: #ef4444 !important;
+                    background: white !important;
+                }
+                .btn-deactivate:hover {
+                    background: #fee2e2 !important;
+                }
+                .btn-activate {
+                    border-color: #86efac !important;
+                    color: #16a34a !important;
+                    background: white !important;
+                }
+                .btn-activate:hover {
+                    background: #dcfce7 !important;
+                }
+                .card-info-area {
                     flex-grow: 1;
                     display: flex;
                     flex-direction: column;
                 }
-                .card-clickable-area:hover .hall-name {
-                    color: #2563eb;
+
+                @media (max-width: 768px) {
+                    .dashboard-header {
+                        flex-direction: column;
+                        align-items: flex-start;
+                    }
+                    .header-actions {
+                        width: 100%;
+                    }
+                    .header-actions button {
+                        flex: 1;
+                    }
                 }
             `}</style>
         </div>

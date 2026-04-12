@@ -9,19 +9,38 @@ import { ProfilePage } from './pages/common/ProfilePage';
 import { DashboardPage } from './pages/common/DashboardPage';
 import { HallAvailabilityPage } from './pages/owner/HallAvailabilityPage';
 
+import { OwnerDashboard } from './pages/owner/OwnerDashboard';
+
 import { useEffect } from 'react';
 import { useAuthStore } from './context/useAuthStore';
+import { injectLogout } from './services/api';
 
 function App() {
   const checkAuth = useAuthStore((state) => state.checkAuth);
+  const logout = useAuthStore((state) => state.logout);
 
   useEffect(() => {
+    injectLogout(() => {
+      logout();
+      window.location.href = '/auth';
+    });
     checkAuth();
-  }, [checkAuth]);
+  }, [checkAuth, logout]);
 
   return (
     <Router>
-      <Toaster position="top-right" />
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          className: 'custom-toast',
+          success: {
+            duration: 3000,
+          },
+          error: {
+            duration: 3000,
+          },
+        }}
+      />
       <div className="app-layout">
         <Routes>
           {/* Main Layout containing Navbar & Footer for all routes */}
@@ -30,13 +49,10 @@ function App() {
             <Route path="/halls" element={<HallListingPage />} />
             <Route path="/halls/:id" element={<HallDetailsPage />} />
             <Route path="/auth" element={<AuthPage />} />
-
-            // ...
-
-            // Inside Routes:
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/hall/availability" element={<HallAvailabilityPage />} />
+            <Route path="/hall" element={<OwnerDashboard />} />
             {/* Redirect legacy specific routes to dashboard if needed, or just remove them. Removing them for cleaner URL enforcement. */}
           </Route>
         </Routes>

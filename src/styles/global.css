@@ -13,8 +13,16 @@
   /* Slate 50 */
   --color-surface: #FFFFFF;
   --color-border: #E2E8F0;
-  --color-success: #10B981;
+  --color-success: #22c55e;
   --color-error: #EF4444;
+
+  /* Status Colors */
+  --color-status-confirmed: #166534;
+  --color-status-pending: #F59E0B;
+  --color-status-available: #3B82F6;
+  --color-status-completed: #166534;
+  --color-status-error: #EF4444;
+  --color-status-blocked: #94A3B8;
 
   /* Typography */
   --font-family-base: 'Inter', system-ui, -apple-system, sans-serif;
@@ -138,5 +146,5 @@ ol {
 }
 
 .btn-success:hover {
-  background-color: #059669;
+  background-color: #16a34a;
 }

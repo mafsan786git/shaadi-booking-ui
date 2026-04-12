@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
+import { notificationService } from '../../services/notificationService';
 import { authService } from '../../services/authService';
 import { useAuthStore } from '../../context/useAuthStore';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
+import { validateMobile, sanitizeMobileInput } from '../../utils/validation';
 
 export const AuthPage = () => {
     const navigate = useNavigate();
@@ -16,12 +17,16 @@ export const AuthPage = () => {
     const [isLoading, setIsLoading] = useState(false);
 
     // Redirect if already logged in
-    const { isAuthenticated } = useAuthStore();
+    const { isAuthenticated, user } = useAuthStore();
     useEffect(() => {
-        if (isAuthenticated) {
-            navigate('/dashboard');
+        if (isAuthenticated && user) {
+            if (user.role === 'CUSTOMER') {
+                navigate('/');
+            } else {
+                navigate('/dashboard');
+            }
         }
-    }, [isAuthenticated, navigate]);
+    }, [isAuthenticated, user, navigate]);
 
     // Timer state
     const [retryDate, setRetryDate] = useState<Date | null>(null);
@@ -49,15 +54,15 @@ export const AuthPage = () => {
 
     const handleSendOtp = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!phone || phone.length < 10) {
-            toast.error('Please enter a valid phone number');
+        if (!validateMobile(phone)) {
+            notificationService.error('Please enter a valid 10-digit mobile number (starting with 1-9)');
             return;
         }
 
         setIsLoading(true);
         try {
             const data = await authService.initiateLogin(phone);
-            toast.success(data.message || 'OTP Sent!');
+            notificationService.success(data.message || 'OTP Sent!');
 
             if (data.retryAfter) {
                 const expiry = new Date(data.retryAfter);
@@ -69,7 +74,7 @@ export const AuthPage = () => {
 
             setStep('OTP');
         } catch (error) {
-            toast.error('Failed to send OTP. Try again.');
+            notificationService.error('Failed to send OTP. Try again.');
             console.error(error);
         } finally {
             setIsLoading(false);
@@ -82,7 +87,7 @@ export const AuthPage = () => {
         setIsLoading(true);
         try {
             const data = await authService.resendOtp(phone);
-            toast.success(data.message || 'OTP Resent!');
+            notificationService.success(data.message || 'OTP Resent!');
 
             if (data.retryAfter) {
                 const expiry = new Date(data.retryAfter);
@@ -90,7 +95,7 @@ export const AuthPage = () => {
                 setTimeLeft(Math.ceil((expiry.getTime() - new Date().getTime()) / 1000));
             }
         } catch (error) {
-            toast.error('Failed to resend OTP.');
+            notificationService.error('Failed to resend OTP.');
         } finally {
             setIsLoading(false);
         }
@@ -99,7 +104,7 @@ export const AuthPage = () => {
     const handleVerifyOtp = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!otp || otp.length < 4) {
-            toast.error('Please enter valid OTP');
+            notificationService.error('Please enter valid OTP');
             return;
         }
 
@@ -107,10 +112,15 @@ export const AuthPage = () => {
         try {
             const tokens = await authService.verifyOtp(phone, otp);
             await login(tokens);
-            toast.success('Logged in successfully!');
-            navigate('/dashboard');
+            notificationService.success('Logged in successfully!');
+            const currentUser = useAuthStore.getState().user;
+            if (currentUser?.role === 'CUSTOMER') {
+                navigate('/');
+            } else {
+                navigate('/dashboard');
+            }
         } catch (error) {
-            toast.error('Invalid OTP. Please try again.');
+            notificationService.error('Invalid OTP. Please try again.');
             console.error(error);
         } finally {
             setIsLoading(false);
@@ -134,7 +144,7 @@ export const AuthPage = () => {
                             label="Phone Number"
                             placeholder="+91 98765 43210"
                             value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
+                            onChange={(e) => setPhone(sanitizeMobileInput(e.target.value))}
                             autoFocus
                         />
                         <Button type="submit" isLoading={isLoading} style={{ width: '100%' }}>

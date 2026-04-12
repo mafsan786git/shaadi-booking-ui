@@ -6,7 +6,7 @@ import type { Hall } from '../../types';
 import { Button } from '../../components/common/Button';
 
 export const HallListingPage = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const zipcode = searchParams.get('zipcode');
   const searchQuery = searchParams.get('search')?.toLowerCase() || '';
 
@@ -50,50 +50,8 @@ export const HallListingPage = () => {
     fetchHalls();
   }, [zipcode]);
 
-  if (!zipcode) return <div className="container">Please provide a zipcode to search.</div>;
-
-  return (
-    <div className="container" style={{ paddingTop: '0.25rem' }}>
-      <header style={{ marginBottom: '1.5rem' }}>
-        <h1>Venues in {zipcode}</h1>
-        <p className="text-muted">{halls.length} results found</p>
-      </header>
-
-      {isLoading && <p>Loading venues...</p>}
-      {error && <p className="error-text">{error}</p>}
-
-      <div className="hall-grid">
-        {halls.filter(hall => !searchQuery || hall.name.toLowerCase().includes(searchQuery)).map((hall) => (
-          <div key={hall.hallId} className="hall-card">
-            <div className="hall-image">
-              {hall.media?.[0] ? (
-                <img src={hall.media[0].driveUrl} alt={hall.name} />
-              ) : (
-                <div className="placeholder-img">No Image</div>
-              )}
-            </div>
-            <div className="hall-details">
-              <h3>{hall.name}</h3>
-              <p className="location">
-                <MapPin size={14} /> {hall.address.city}, {hall.address.state}
-              </p>
-
-              <div className="hall-meta">
-                <span><Users size={14} /> {hall.capacity} Guests</span>
-                <span><IndianRupee size={14} /> {hall.basePrice.toLocaleString()} / day</span>
-              </div>
-
-              <div className="hall-actions">
-                <Link to={`/hall/${hall.hallId}`}>
-                  <Button variant="outline" style={{ width: '100%' }}>View Details</Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <style>{`
+  const pageStyles = (
+    <style>{`
         .hall-grid {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -148,7 +106,152 @@ export const HallListingPage = () => {
         }
         .text-muted { color: var(--color-text-muted); }
         .error-text { color: var(--color-error); }
+        
+        .empty-search-container {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 60vh;
+          padding: 2rem;
+        }
+        .empty-search-card {
+          background: white;
+          padding: 3rem;
+          border-radius: var(--radius-lg);
+          box-shadow: var(--shadow-lg);
+          width: 100%;
+          max-width: 600px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          border: 1px solid var(--color-border);
+        }
+        .icon-wrapper {
+          width: 80px;
+          height: 80px;
+          border-radius: 50%;
+          background: var(--color-primary-light);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 1.5rem;
+        }
+        .empty-search-card h2 {
+          margin-bottom: 0.5rem;
+          color: var(--color-text-main);
+        }
+        .search-box-large {
+          width: 100%;
+          display: flex;
+          gap: 0.5rem;
+          background: var(--color-background);
+          padding: 0.5rem;
+          border-radius: var(--radius-full);
+          border: 1px solid var(--color-border);
+        }
+        .input-wrapper-large {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          padding-left: 1rem;
+        }
+        .input-wrapper-large .icon {
+          color: var(--color-text-muted);
+          margin-right: 0.5rem;
+        }
+        .input-wrapper-large input {
+          width: 100%;
+          border: none;
+          background: transparent;
+          outline: none;
+          font-size: 1rem;
+          color: var(--color-text-main);
+        }
       `}</style>
-    </div>
+  );
+
+  if (!zipcode) {
+    return (
+      <>
+        {pageStyles}
+        <div className="container empty-search-container">
+          <div className="empty-search-card">
+            <div className="icon-wrapper">
+               <MapPin size={48} className="text-primary" />
+            </div>
+            <h2>Search for Venues</h2>
+            <p className="text-muted" style={{ marginBottom: '2rem', textAlign: 'center' }}>
+               Enter a zipcode to discover premium wedding halls and venues in that area.
+            </p>
+            <form className="search-box-large" onSubmit={(e) => {
+               e.preventDefault();
+               const formData = new FormData(e.currentTarget);
+               const zip = formData.get('zipcode') as string;
+               if (zip && zip.length >= 5) {
+                   setSearchParams({ zipcode: zip });
+               }
+            }}>
+               <div className="input-wrapper-large">
+                  <MapPin className="icon" size={20} />
+                  <input 
+                     name="zipcode"
+                     type="text" 
+                     placeholder="Enter Zipcode" 
+                     className="hero-input"
+                     autoFocus
+                  />
+               </div>
+               <Button type="submit" variant="primary" style={{ padding: '0.75rem 2rem' }}>Search</Button>
+            </form>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {pageStyles}
+      <div className="container" style={{ paddingTop: '0.25rem' }}>
+        <header style={{ marginBottom: '1.5rem' }}>
+          <h1>Venues in {zipcode}</h1>
+          <p className="text-muted">{halls.length} results found</p>
+        </header>
+
+        {isLoading && <p>Loading venues...</p>}
+        {error && <p className="error-text">{error}</p>}
+
+        <div className="hall-grid">
+          {halls.filter(hall => !searchQuery || hall.name.toLowerCase().includes(searchQuery)).map((hall) => (
+            <div key={hall.hallId} className="hall-card">
+              <div className="hall-image">
+                {hall.media?.[0] ? (
+                  <img src={hall.media[0].driveUrl} alt={hall.name} />
+                ) : (
+                  <div className="placeholder-img">No Image</div>
+                )}
+              </div>
+              <div className="hall-details">
+                <h3>{hall.name}</h3>
+                <p className="location">
+                  <MapPin size={14} /> {hall.address.city}, {hall.address.state}
+                </p>
+
+                <div className="hall-meta">
+                  <span><Users size={14} /> {hall.capacity} Guests</span>
+                  <span><IndianRupee size={14} /> {hall.basePrice.toLocaleString()} / day</span>
+                </div>
+
+                <div className="hall-actions">
+                  <Link to={`/hall/${hall.hallId}`}>
+                    <Button variant="outline" style={{ width: '100%' }}>View Details</Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
   );
 };
