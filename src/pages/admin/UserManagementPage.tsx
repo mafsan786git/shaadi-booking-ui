@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { userService } from '../../services/userService';
 import type { CreateUserRequest } from '../../services/userService';
-import type { User, UserStatus, Role } from '../../types';
+import type { User, UserStatus} from '../../types';
 import { notificationService } from '../../services/notificationService';
 import { validateMobile, sanitizeMobileInput } from '../../utils/validation';
 
