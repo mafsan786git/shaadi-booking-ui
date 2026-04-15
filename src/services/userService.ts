@@ -18,7 +18,6 @@ export const userService = {
     // Admin: Get all owners
     getAllOwners: async (): Promise<User[]> => {
         const response = await api.get('/v1/admin/users/owner');
-        const response = await api.get('/v1/admin/users/owner');
         return response.data;
     },
 
