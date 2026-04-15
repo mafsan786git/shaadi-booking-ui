@@ -5,7 +5,7 @@ import type { BookingRequest, EventType, BookingStatus } from '../../types';
 import { bookingService } from '../../services/bookingService';
 import { hallService } from '../../services/hallService';
 import type { Hall, DayAvailabilityResponse } from '../../types';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, addDays, startOfDay, isBefore } from 'date-fns';
 import { validateMobile, sanitizeMobileInput } from '../../utils/validation';
 
 interface BookingModalProps {
@@ -55,7 +55,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         ...initialData
     });
 
-    const getAvailableStatuses = (currentStatus?: BookingStatus): BookingStatus[] => {
+    const getAvailableStatuses = (currentStatus?: BookingStatus, endDateStr?: string): BookingStatus[] => {
         if (!currentStatus) return ['REQUESTED'];
 
         // Owner Logic
@@ -65,8 +65,25 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     return ['REQUESTED', 'OWNER_RESPONDED', 'REJECTED', 'CONFIRMED'];
                 case 'OWNER_RESPONDED':
                     return ['OWNER_RESPONDED', 'CONFIRMED', 'REJECTED'];
-                case 'CONFIRMED':
-                    return ['CONFIRMED', 'COMPLETED', 'CANCELLED'];
+                case 'CONFIRMED': {
+                    const statuses: BookingStatus[] = ['CONFIRMED', 'CANCELLED'];
+                    
+                    // Logic: Completed can be done only if end date is gone
+                    // user logic: not LocalDate.now().isBefore(endDate.plusDays(1))
+                    if (endDateStr) {
+                        try {
+                            const todayDate = startOfDay(new Date());
+                            const endPlusOne = addDays(parseISO(endDateStr), 1);
+                            if (!isBefore(todayDate, endPlusOne)) {
+                                statuses.push('COMPLETED');
+                            }
+                        } catch (e) {
+                            console.error("Date parsing error in status logic", e);
+                        }
+                    }
+                    
+                    return statuses;
+                }
                 case 'COMPLETED':
                 case 'CANCELLED':
                 case 'REJECTED':
@@ -388,7 +405,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                                         onChange={e => handleChange('status', e.target.value)}
                                         disabled={!isEditing || ['COMPLETED', 'CANCELLED', 'REJECTED'].includes(initialData?.status as string)}
                                     >
-                                        {getAvailableStatuses(initialData?.status).map(status => (
+                                        {getAvailableStatuses(initialData?.status, initialData?.endDate || initialData?.startDate).map(status => (
                                             <option key={status} value={status}>
                                                 {status.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')}
                                             </option>
