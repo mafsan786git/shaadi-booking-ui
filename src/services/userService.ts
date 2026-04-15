@@ -1,5 +1,18 @@
 import api from './api';
-import type { User, UserStatus } from '../types';
+import type { User, UserStatus, Role } from '../types';
+
+export interface CreateUserRequest {
+    phone: string;
+    name: string;
+    role: Role;
+    status: UserStatus;
+    address: string;
+    city: string;
+    state: string;
+    zipcode: string;
+    lat: number;
+    lng: number;
+}
 
 export const userService = {
     // Admin: Get all owners
@@ -27,6 +40,18 @@ export const userService = {
         };
 
         const response = await api.put(`/v1/admin/user/${user.id}`, payload);
+        return response.data;
+    },
+
+    // Admin: Create a new user
+    createUser: async (payload: CreateUserRequest): Promise<User> => {
+        const response = await api.post('/v1/admin/create/user', payload);
+        return response.data;
+    },
+
+    // Admin: Update full user details (Edit modal)
+    updateUser: async (userId: string, payload: CreateUserRequest): Promise<User> => {
+        const response = await api.put(`/v1/admin/user/${userId}`, payload);
         return response.data;
     }
 };
