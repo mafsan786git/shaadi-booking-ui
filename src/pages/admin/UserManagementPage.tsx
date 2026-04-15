@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { userService } from '../../services/userService';
 import type { CreateUserRequest } from '../../services/userService';
 import type { User, UserStatus, Role } from '../../types';
@@ -25,6 +26,7 @@ const EMPTY_FORM: CreateUserRequest = {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export const UserManagementPage = () => {
+    const location = useLocation();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -35,9 +37,10 @@ export const UserManagementPage = () => {
 
     useEffect(() => {
         fetchUsers();
-    }, []);
+    }, [location.key]);
 
     const fetchUsers = async () => {
+        setLoading(true);
         try {
             const data = await userService.getAllOwners();
             setUsers(data);
@@ -106,9 +109,10 @@ export const UserManagementPage = () => {
         setSubmitting(true);
         try {
             if (modalMode === 'create') {
-                const newUser = await userService.createUser(formData);
-                setUsers(prev => [...prev, newUser]);
+                await userService.createUser(formData);
                 notificationService.success('User created successfully');
+                // Refresh list from server to get full user objects with IDs
+                await fetchUsers();
             } else if (editingUser) {
                 await userService.updateUser(editingUser.id, formData);
                 // Manually merge since backend may return a flat shape without nested address
