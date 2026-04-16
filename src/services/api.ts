@@ -83,7 +83,7 @@ api.interceptors.response.use(
                     }
 
                     // Use a clean axios call to avoid recursion with interceptors
-                    const { data } = await axios.post(`${getBaseURL()}/auth/refresh`, { refreshToken });
+                    const { data } = await axios.post(`${getBaseURL()}/v1/auth/refresh`, { refreshToken });
 
                     const { accessToken: newAccessToken, refreshToken: newRefreshToken } = data;
 
